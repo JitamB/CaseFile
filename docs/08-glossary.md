@@ -4,7 +4,7 @@
 
 `Appendix`
 
-[← Differentiators, Evaluation & Deliverables](07-outcome.md) · [Index](README.md)
+[← Differentiators, Evaluation & Deliverables](07-outcome.md) · [Index](README.md) · [Build Protocol →](09-build-protocol.md)
 
 ---
 
@@ -36,4 +36,4 @@
 
 ---
 
-[← Differentiators, Evaluation & Deliverables](07-outcome.md) · [Index](README.md)
+[← Differentiators, Evaluation & Deliverables](07-outcome.md) · [Index](README.md) · [Build Protocol →](09-build-protocol.md)
