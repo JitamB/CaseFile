@@ -17,15 +17,20 @@ Three tracks, split along the architecture's natural seams so the handoff is **l
 
 | Track | Name | Owner | Scope |
 |---|---|---|---|
-| **A** | **Data & Truth** | **Goyal** | Everything that produces a number. Contract, generator, loader, statistics library, Verify, Decompose |
-| **B** | **Evidence & Reasoning** | **Jitam** | Everything between a footprint and a verdict. Hypotheses, retrieval, extraction, challenge, adjudication, recommendation, LLM layer |
-| **C** | **Surface & Delivery** | **Sahl** | Everything a human touches. Orchestrator, API, entitlement, narration, personas, UI, feedback — plus all three graded deliverables |
+| **A** | **Data & Truth** | **Aditya Goyal** | Everything that produces a number. Contract, generator, loader, statistics library, Verify, Decompose |
+| **B** | **Evidence & Reasoning** | **Jitam Barman** | Everything between a footprint and a verdict. Hypotheses, retrieval, extraction, challenge, adjudication, recommendation, LLM layer |
+| **C** | **Surface & Delivery** | **Sahil Kumar Gupta** | Everything a human touches. Orchestrator, API, entitlement, narration, personas, UI, feedback — plus all three graded deliverables |
 
 >Track A is the most statistics-heavy; Track B the most LLM- and retrieval-heavy; Track C the most
 > product-, design- and deliverable-heavy. Assign to strengths.
 
-**Shared by all three:** `src/casefile/models.py` (day 1, together), tests for own modules,
-the demo script, and the business proposal's technical sections.
+**Coordination sits with B.** Jitam owns the repo protocol, the review queue, the gate
+sessions and the open-decision list — [§47](09-build-protocol.md). It is a process role, not
+extra modules: the orchestrator stays with C, where the tracks naturally meet.
+
+**Shared by all three:** `src/casefile/models.py` and `fixtures/` (day 1, together — and
+never changed by one person afterwards), tests for own modules, the demo script, and the
+business proposal's technical sections.
 
 ---
 
@@ -103,7 +108,7 @@ entire LLM boundary** — and owns proving that the boundary holds.
 | `data/corpus/` | — | Frozen text generation: tickets, notes, news — with the 85% noise floor and the misleading documents |
 
 ### Dependencies
-- **On C:** `models.py` (day 1, joint).
+- **On nobody after day 1.** `models.py` and the fixtures are written jointly that morning.
 - **On A:** `ContributionTree` + `Footprint` (needed to run for real) and `stats/` (for S5).
   **Unblocked from day 1 by `fixtures/decomposition_east.json`** — a hand-written
   `ContributionTree` matching §10. Do not wait for A.
@@ -163,23 +168,22 @@ C owns the orchestrator, so C is where A and B meet.
 - **On A and B:** a complete `Case`. **Unblocked from day 1 by
   `fixtures/case_east_8pct.json`** — a hand-written full `Case` matching §10. Build the
   entire UI against it. Do not wait.
-- **Provides to A and B:** `models.py` shepherding on day 1, plus the fixtures both tracks
-  build against.
+- **Provides to A and B:** the repo skeleton, `Makefile` and CI on day 1 — the commands
+  every other track's verification runs through ([§41.3](09-build-protocol.md)).
 
 ### Deliverables
 
 | # | Deliverable | Definition of done |
 |---|---|---|
-| C1 | `models.py` agreed and frozen | All three tracks import it; changes require all three to agree |
-| C2 | Fixtures | `case_east_8pct.json` + `decomposition_east.json` hand-written by end of day 1 |
-| C3 | Orchestrator | `make demo` runs alert → case end to end |
-| C4 | Entitlement (S8a) | **Security test passes:** restricted fields never appear in any persona's rendered output |
-| C5 | 4 personas + narration (S8b) | Each persona's *recommended action* differs, not only the wording |
-| C6 | UI, 5 screens | Case list, case file, evidence drill-down, persona switcher, telemetry panel |
-| C7 | Feedback (S9) | After 5 marks, evidence-gathering depth and presentation order shift measurably; a promoted contract gap appears in the registry |
-| C8 | README + Makefile | `git clone && make demo` works on a clean machine |
-| C9 | Business proposal | Problem framing, solution design, users, business case, roadmap, risks + mitigations |
-| C10 | Demo video | ≤ the stated limit; ends with the ground-truth reveal |
+| C1 | Repo skeleton, `Makefile`, CI | `make check` green; CI blocks a PR that has not run it |
+| C2 | Orchestrator | `make demo` runs alert → case end to end |
+| C3 | Entitlement (S8a) | **Security test passes:** restricted fields never appear in any persona's rendered output |
+| C4 | 4 personas + narration (S8b) | Each persona's *recommended action* differs, not only the wording |
+| C5 | UI, 5 screens | Case list, case file, evidence drill-down, persona switcher, telemetry panel |
+| C6 | Feedback (S9) | After 5 marks, evidence-gathering depth and presentation order shift measurably; a promoted contract gap appears in the registry |
+| C7 | Repo README | `git clone && make demo` works on a clean machine |
+| C8 | Business proposal | Problem framing, solution design, users, business case, roadmap, risks + mitigations |
+| C9 | Demo video | ≤ the stated limit; ends with the ground-truth reveal |
 
 ### Implementation order
 ```
@@ -237,14 +241,17 @@ feature.
 
 **Morning — all three in one room:**
 
-1. **Write `src/casefile/models.py` together.** Every Pydantic model in §14 and §30:
+1. **Harden the repo** — [§41.1](09-build-protocol.md). Thirty minutes, and it is what makes
+   every rule below enforceable instead of remembered.
+2. **Write `src/casefile/models.py` together.** Every Pydantic model in §14 and §30:
    `KPIContract`, `Trigger`, `VerificationResult`, `ContributionTree`, `Footprint`,
    `Hypothesis`, `EvidenceItem`, `Source`, `TestResult`, `TestMatrix`, `Attribution`,
    `Verdict`, `Recommendation`, `OpenQuestion`, `Telemetry`, `Case`, `Persona`.
-2. **Hand-write two fixtures** from §10:
+3. **Hand-write two fixtures** from §10:
    - `fixtures/decomposition_east.json` — a `ContributionTree` + `Footprint` (unblocks B)
    - `fixtures/case_east_8pct.json` — a complete `Case` (unblocks C)
-3. **Agree the four rules in §30.**
+4. **Agree the four rules in §30**, and settle decision D-1 in
+   [§47.2](09-build-protocol.md).
 
 **Afternoon — split.** Everyone now has something to build against and **nobody blocks on
 anybody for the rest of the project.**
