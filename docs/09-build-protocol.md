@@ -49,6 +49,7 @@ everyone's first feature PR adds files rather than directories.
 | `data/corpus/` (frozen text) | Must not vary between runs — [§24](03-data.md) |
 | `data/ground_truth.json` | Committed, but a lint rule forbids anything outside `tests/` from importing it |
 | `fixtures/` | The golden objects both tracks build against |
+| `llm_cache/` | Recorded LLM responses — D-3, settled at ladder step 0.5. They are what makes CI offline (§43) and the recorded demo immune to a bad model day (§36 R4) |
 | `docs/` | The design record |
 
 | Ignored | Why |
@@ -57,7 +58,6 @@ everyone's first feature PR adds files rather than directories.
 | `.env` | **API keys never enter the repo.** Commit `.env.example` with the key names and no values |
 | `*.duckdb` | Regenerable by `make data`; a binary in git history is dead weight |
 | `ui/node_modules/`, `ui/dist/` | Regenerable |
-| `llm_cache/` *(decide at P0)* | Recorded LLM responses. **Recommendation: commit them** — they are what makes CI offline and the demo bulletproof |
 
 ### 41.3 The commands everything else refers to
 
