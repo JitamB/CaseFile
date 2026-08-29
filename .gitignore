@@ -1,2 +1,25 @@
+# §41.2 — what is committed, and what is not.
+# Note what is NOT here: llm_cache/ and data/corpus/ are committed on purpose.
+# Recorded model responses are what make CI offline and the demo reproducible.
+
+# Working drafts, kept local — superseded by docs/
 initials/
+
+# Machine-local
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .DS_Store
+
+# Secrets — never commit. Key names live in .env.example.
+.env
+
+# Regenerable
+*.duckdb
+*.duckdb.wal
+ui/node_modules/
+ui/dist/
