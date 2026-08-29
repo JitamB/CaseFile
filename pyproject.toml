@@ -14,6 +14,7 @@ requires-python = ">=3.11"
 # ladder step needs it, and CI keeps installing only `dev`.
 dependencies = [
   "pydantic>=2.7",
+  "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +22,7 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.5",
   "mypy>=1.10",
+  "types-PyYAML>=6.0",  # mypy runs on src/ in CI; contract.py imports yaml
 ]
 
 [tool.hatch.build.targets.wheel]
