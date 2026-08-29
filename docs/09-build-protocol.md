@@ -33,7 +33,7 @@ them, not because anyone remembers it.
 | **Visibility** | Public | Round 2 requires it, and CI minutes are free on public repos |
 | **Collaborators** | All three, write access | CODEOWNERS silently ignores anyone without write access |
 | **Branches** | `main` only, plus short-lived work branches | Branches are per *work item*, never per *person*. A personal branch drifts for weeks and merges as one unreviewable lump |
-| **`main` protection** | PR required · 1 approval · both CI jobs green · branch deleted on merge | No direct pushes, including the owner's |
+| **`main` protection** | PR required · 1 approval · both CI jobs green · linear history · rebase-only merge · branch deleted on merge | No direct pushes, including the owner's |
 | **`.github/`** | `CODEOWNERS`, `pull_request_template.md`, `workflows/ci.yml` | §42–43 — what makes review automatic instead of remembered |
 | **`initials/`** | Gitignored | Earlier drafts, superseded by `docs/`. Nothing in the repository links into it — CI fails on a link to an uncommitted path, so that cannot silently regress |
 
@@ -170,8 +170,10 @@ is deliberately **off**: most paths have a single owner, and GitHub will not acc
 author's approval of their own PR — so turning it on deadlocks every solo-owned change.
 Routing is automatic; judgement stays human.
 
-**Squash-merge, delete the branch.** History stays one commit per ladder step, which makes
-`git log` a build log.
+**Rebase-merge, delete the branch.** Squash and merge-commits are both disabled on the
+repo, so the button offers only this. Every commit in a PR lands on `main` individually
+and linearly — `git log` reads as a build log at *task* granularity, which is why §42.1
+asks for commits scoped to one task each rather than one lump per branch.
 
 ### 42.4 Conflicts are a signal, not an accident
 
