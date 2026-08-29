@@ -163,6 +163,13 @@ the entire reason the tracks can move in parallel without trusting each other.
 | Touches another track's module | 1, from **that track's owner** |
 | `models.py`, `fixtures/`, `Makefile`, `.github/` | **All three**, and for `models.py` in the same sitting ([§30 rule 1](04-team.md)) |
 
+**What is machine-enforced, and what is convention.** Branch protection hard-requires *one*
+approval and green CI on every PR. The rest of the table is convention, carried by
+CODEOWNERS auto-requesting the right reviewer. GitHub's stricter `require_code_owner_reviews`
+is deliberately **off**: most paths have a single owner, and GitHub will not accept an
+author's approval of their own PR — so turning it on deadlocks every solo-owned change.
+Routing is automatic; judgement stays human.
+
 **Squash-merge, delete the branch.** History stays one commit per ladder step, which makes
 `git log` a build log.
 
