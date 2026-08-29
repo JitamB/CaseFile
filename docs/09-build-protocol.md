@@ -70,7 +70,7 @@ make corpus    regenerate the frozen text corpus   (rare; needs an API key)
 make demo      alert → closed case, end to end
 make test      the full pytest suite
 make check     ruff + mypy + pytest          ← exactly what CI runs
-make gate N    run phase gate N's assertions  (pytest -m gateN)
+make gateN     run phase gate N's assertions  (pytest -m gateN)
 ```
 
 **`make check` is the contract with CI.** If it passes locally it passes on GitHub. If those
@@ -237,7 +237,7 @@ parallel.
 | 0.7 | `generator.py` — structured only, scenario A | Goyal | `make data` twice → byte-identical; the East −8% is visible in the tables |
 | 0.8 | `loader.py` — DuckDB, conformance, watermarks | Goyal | Three sources join on `account_id`; one watermark per source |
 
-**→ G0:** `make gate 0` — `make data` reproducible, contracts validate, fixtures validate.
+**→ G0:** `make gate0` — `make data` reproducible, contracts validate, fixtures validate.
 
 ### P1 · Deterministic spine — 5 days · zero LLM calls
 
@@ -253,7 +253,7 @@ parallel.
 | 1.8 | `personas/*.yaml` — four specs | Sahil | All four load and validate |
 | 1.9 | UI: case-file screen, fixture-driven | Sahil | Renders [§10](01-problem-and-solution.md) exactly |
 
-**→ G1:** `make gate 1`. **This is the first demoable state, and it already proves the
+**→ G1:** `make gate1`. **This is the first demoable state, and it already proves the
 thesis** — verification, decomposition and an honest verdict, with no model in the loop.
 
 ### P2 · Evidence and challenge — 7 days
@@ -270,7 +270,7 @@ thesis** — verification, decomposition and an honest verdict, with no model in
 | 2.8 | Generator — scenarios B, C, D, E, F, G | Goyal | Each triggers its expected path |
 | 2.9 | UI: case list (priority-ordered) + evidence drill-down | Sahil | Every claim links to its source; list order matches `case.priority` |
 
-**→ G2:** `make gate 2`. The reasoning engine is now falsifiable against sealed ground truth.
+**→ G2:** `make gate2`. The reasoning engine is now falsifiable against sealed ground truth.
 
 ### P3 · Surface — 6 days
 
@@ -283,7 +283,7 @@ thesis** — verification, decomposition and an honest verdict, with no model in
 | 3.5 | UI: telemetry panel | Sahil | Cost, latency and split on screen |
 | 3.6 | Cadence upgrade path — provisional case re-runs on a late watermark | Sahil | Ceiling lifts and the verdict re-adjudicates when the 24h batch lands |
 
-**→ G3:** `make gate 3`. **This is a complete submission.** Everything after is upside.
+**→ G3:** `make gate3`. **This is a complete submission.** Everything after is upside.
 
 ### P4 · Learning — 2 days
 
@@ -291,7 +291,7 @@ thesis** — verification, decomposition and an honest verdict, with no model in
 |---|---|---|---|
 | 4.1 | `feedback.py` S9 — priors, threshold tuning, gap promotion | Sahil | After 5 marks: gathering depth and presentation order shift; a contract gap appears in the registry |
 
-**→ G4:** `make gate 4`.
+**→ G4:** `make gate4`.
 
 ### P5 · Optional — 3 days
 Conversational follow-up over closed cases; the Unity Catalog masking seam. **Only if
@@ -308,7 +308,7 @@ genuinely spare** — first on the cut list (§47.3).
 | 6.5 | Demo video ([§40](07-outcome.md) script) | Sahil | Ends on the ground-truth reveal |
 | 6.6 | **Clean-machine test** | all three | Fresh clone on a machine that never built this: `make setup && make data && make demo && make test` |
 
-**→ G6:** `make gate 6`.
+**→ G6:** `make gate6`.
 
 ---
 
@@ -319,7 +319,7 @@ A phase gate is **a thirty-minute call with all three present**, not a status up
 ```
 1.  git clone into a fresh directory        ← not anyone's working copy
 2.  make setup && make data
-3.  make gate N                             ← run it live, together
+3.  make gateN                              ← run it live, together
 4.  Green  → tick the gate, add its marker to the required checks on main
     Red    → the failure is the top of the next day's board, for whoever owns it
 5.  Record the result and any decision in the log (§46.4)
