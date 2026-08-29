@@ -1,0 +1,67 @@
+{
+  "kpi": "net_revenue",
+  "period": "2026-04",
+  "total_delta": -24000000.0,
+  "by_dimension": {
+    "kpi": [
+      {
+        "dimension": "kpi",
+        "key": "gross_renewal_rate",
+        "delta": -21000000.0,
+        "share": 0.875,
+        "children": []
+      },
+      {
+        "dimension": "kpi",
+        "key": "expansion_arr",
+        "delta": -2000000.0,
+        "share": 0.08333333333333333,
+        "children": []
+      },
+      {
+        "dimension": "kpi",
+        "key": "new_business_arr",
+        "delta": -1000000.0,
+        "share": 0.041666666666666664,
+        "children": []
+      }
+    ],
+    "account": [
+      {
+        "dimension": "account",
+        "key": "ACME",
+        "delta": -13000000.0,
+        "share": 0.5416666666666666,
+        "children": []
+      },
+      {
+        "dimension": "account",
+        "key": "NORTHWIND",
+        "delta": -8000000.0,
+        "share": 0.3333333333333333,
+        "children": []
+      },
+      {
+        "dimension": "account",
+        "key": "others",
+        "delta": -3000000.0,
+        "share": 0.125,
+        "children": []
+      }
+    ]
+  },
+  "footprint": {
+    "entities": {
+      "account_id": ["ACME", "NORTHWIND"]
+    },
+    "window_start": "2026-03-01",
+    "window_end": "2026-04-30",
+    "delta": -21000000.0
+  },
+  "pvm": {
+    "price": -2000000.0,
+    "volume": -21000000.0,
+    "mix": -1000000.0
+  },
+  "hhi": 0.4201388888888889
+}
