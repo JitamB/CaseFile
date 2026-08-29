@@ -1,0 +1,41 @@
+# Review routing — §42.3 of docs/09-build-protocol.md
+#
+# GitHub requests these reviewers automatically. Paths that do not exist yet
+# simply match nothing until the ladder step that creates them lands.
+
+# ── Track A · Data & Truth ────────────────────────────────────────────────
+/src/casefile/stats/                 @its-adityagoyal
+/src/casefile/data/                  @its-adityagoyal
+/src/casefile/contract.py            @its-adityagoyal
+/contracts/                          @its-adityagoyal
+/src/casefile/engine/verify.py       @its-adityagoyal
+/src/casefile/engine/decompose.py    @its-adityagoyal
+
+# ── Track B · Evidence & Reasoning ────────────────────────────────────────
+/src/casefile/llm/                   @JitamB
+/src/casefile/retrieval/             @JitamB
+/src/casefile/ledger.py              @JitamB
+/probes/                             @JitamB
+/src/casefile/engine/hypothesise.py  @JitamB
+/src/casefile/engine/evidence.py     @JitamB
+/src/casefile/engine/challenge.py    @JitamB
+/src/casefile/engine/adjudicate.py   @JitamB
+/src/casefile/engine/recommend.py    @JitamB
+
+# ── Track C · Surface & Delivery ──────────────────────────────────────────
+/src/casefile/orchestrator.py        @sahilgupta630
+/src/casefile/api/                   @sahilgupta630
+/ui/                                 @sahilgupta630
+/personas/                           @sahilgupta630
+/src/casefile/engine/entitle.py      @sahilgupta630
+/src/casefile/engine/narrate.py      @sahilgupta630
+/src/casefile/engine/feedback.py     @sahilgupta630
+
+# ── The treaty — all three, always ────────────────────────────────────────
+# A change here costs every track a context switch. That is the point.
+/src/casefile/models.py   @JitamB @its-adityagoyal @sahilgupta630
+/fixtures/                @JitamB @its-adityagoyal @sahilgupta630
+/Makefile                 @JitamB @its-adityagoyal @sahilgupta630
+/pyproject.toml           @JitamB @its-adityagoyal @sahilgupta630
+/.github/                 @JitamB @its-adityagoyal @sahilgupta630
+/tools/                   @JitamB @its-adityagoyal @sahilgupta630

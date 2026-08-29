@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Every internal link resolves to a committed file
+        run: python tools/check_links.py
+
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # CI never reaches the network for a model call. The LLM layer replays
+      # from llm_cache/ instead — see §43.
+      - name: ground_truth.json is imported only by tests/
+        run: python tools/check_ground_truth_isolation.py
+
+      # This guard disappears at ladder step 0.4, when pyproject.toml lands.
+      - name: Is the Python project scaffolded yet?
+        id: project
+        run: |
+          if [ -f pyproject.toml ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::pyproject.toml not present yet — lint, types and tests start at ladder step 0.4"
+          fi
+
+      - name: Install
+        if: steps.project.outputs.ready == 'true'
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        if: steps.project.outputs.ready == 'true'
+        run: ruff check src tests
+
+      - name: Types
+        if: steps.project.outputs.ready == 'true'
+        run: mypy src
+
+      - name: Tests
+        if: steps.project.outputs.ready == 'true'
+        env:
+          CASEFILE_LLM_REPLAY: "true"
+        run: pytest -q
