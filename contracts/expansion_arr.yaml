@@ -1,0 +1,104 @@
+# ── contracts/expansion_arr.yaml ───────────────────────────────────────
+id: expansion_arr
+label: Expansion ARR
+owner_role: cro
+
+# [1] DEFINITION
+definition: >
+  Annual recurring revenue added to existing accounts through upsell and
+  cross-sell opportunities closed won in the period. Excludes new logos and
+  excludes renewals at the existing contract value.
+unit: INR
+direction: up_is_good
+grain: [date, account_id, product_id, region]
+calendar: fiscal_445
+
+# [2] CALCULATION
+formula: SUM(opportunity.arr_value)
+filters:
+  - opportunity.type = 'expansion'
+  - opportunity.closed_won = 1
+refresh: { source: crm, cadence: 24h, sla_hours: 24 }
+
+# [+] DEFINITION EPOCHS
+epochs:
+  - { effective_from: 2023-04-01, formula: "SUM(opportunity.arr_value)" }
+
+composition: []
+decomposition_dims: [region, segment, account]
+
+# [3] THRESHOLDS
+materiality:
+  relative: 0.10
+  absolute: 1_500_000
+  min_persistence: 2
+  z_threshold: 3.0
+data_quality:
+  max_single_record_share: 0.35
+  min_completeness: 0.95
+
+# [4] DRIVERS — scenario G injects `pricing_change` and `supply_delay` on the
+#     same five West accounts in the same fortnight, so both must be enumerable
+#     here or the Contested path has nothing to contest.
+drivers:
+  - id: pricing_change
+    type: internal_controllable
+    evidence_sources: [price_book, crm_notes]
+    max_lag_days: 60
+    probe_sql: probes/price_delta.sql
+    lever: { action: pricing_review, owner_role: cro, lag_days: 30, save_rate: [0.30, 0.60] }
+  - id: supply_delay
+    type: internal_controllable
+    evidence_sources: [incident, deploy_log]
+    max_lag_days: 30
+    probe_sql: probes/incident_scan.sql
+    lever: { action: fulfilment_escalation, owner_role: vp_ops, lag_days: 10, save_rate: [0.50, 0.80] }
+  - id: integration_delay
+    type: internal_controllable
+    evidence_sources: [tickets, crm_notes, deploy_log]
+    max_lag_days: 45
+    probe_sql: probes/ticket_spike.sql
+    lever: { action: prioritise_integration_fix, owner_role: vp_engineering,
+             lag_days: 14, save_rate: [0.75, 1.00] }
+  - id: competitor_offer
+    type: external
+    evidence_sources: [crm_lost_reason, news]
+    max_lag_days: 90
+    probe_sql: probes/lost_reason_scan.sql
+    lever: { action: competitive_desk_review, owner_role: vp_sales,
+             lag_days: 7, save_rate: [0.20, 0.50] }
+  - id: seasonality
+    type: external_uncontrollable
+    evidence_sources: [historical_series]
+    max_lag_days: 0
+    lever: null
+
+# [5] LINEAGE
+lineage:
+  upstream:
+    - crm.opportunity → metric.expansion_arr   (filter to expansion, aggregate)
+  joins:
+    - crm.account ON account_id  (region, segment enrichment)
+  downstream: [metric.net_revenue, metric.nrr]
+
+# [6] ACCESS RESTRICTIONS
+access:
+  row:
+    region:
+      cfo: ["*"]
+      cro: ["*"]
+      vp_sales: [own_region]
+      analyst: [own_region]
+      support_lead: [own_region]
+  column:
+    account_name: [cfo, cro, vp_sales, analyst]
+    arr_value:    [cfo, cro, vp_sales, analyst]
+  domain:
+    segment: { support_lead: [smb, mid_market] }
+  masking:
+    account_name: hash_alias
+    arr_value:    band_1_5_cr
+
+# [+] HISTORY
+history_start: 2023-04-01
+seasonal_period_days: 365

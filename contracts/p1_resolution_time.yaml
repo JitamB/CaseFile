@@ -1,0 +1,96 @@
+# ── contracts/p1_resolution_time.yaml ──────────────────────────────────
+#
+# Scenario C's KPI (§25). `product_ops` carries eight months of history against
+# a 365-day seasonal period, so `history_start` here is genuinely less than two
+# seasonal cycles and §15's sparse-history path fires on the data rather than on
+# a flag somebody set. The peer-borrowed baseline and the Likely ceiling are
+# consequences of these two fields, not of a special case in the code.
+id: p1_resolution_time
+label: P1 Ticket Resolution Time
+owner_role: vp_engineering
+
+# [1] DEFINITION
+definition: >
+  Median wall-clock hours from ticket creation to resolution for priority-one
+  tickets resolved in the period. Median rather than mean because one ticket
+  left open over a holiday would otherwise define the month. Unresolved
+  tickets are excluded and counted separately as backlog.
+unit: hours
+direction: down_is_good
+grain: [date, account_id, region]
+calendar: fiscal_445
+
+# [2] CALCULATION
+formula: MEDIAN(date_diff('minute', ticket.created_at, ticket.resolved_at)) / 60.0
+filters:
+  - ticket.priority = 'P1'
+  - ticket.resolved_at IS NOT NULL
+refresh: { source: product_ops, cadence: 15min, sla_hours: 0.25 }
+
+epochs:
+  - { effective_from: 2025-09-01,
+      formula: "MEDIAN(date_diff('minute', ticket.created_at, ticket.resolved_at)) / 60.0" }
+
+composition: []
+decomposition_dims: [region, segment, account]
+
+# [3] THRESHOLDS — hours, so `absolute` is hours and not rupees.
+materiality:
+  relative: 0.15
+  absolute: 2.0
+  min_persistence: 2
+  z_threshold: 3.0
+data_quality:
+  max_single_record_share: 0.35
+  min_completeness: 0.95
+
+# [4] DRIVERS
+drivers:
+  - id: integration_delay
+    type: internal_controllable
+    evidence_sources: [tickets, deploy_log]
+    max_lag_days: 45
+    probe_sql: probes/ticket_spike.sql
+    lever: { action: prioritise_integration_fix, owner_role: vp_engineering,
+             lag_days: 14, save_rate: [0.75, 1.00] }
+  - id: supply_delay
+    type: internal_controllable
+    evidence_sources: [incident, deploy_log]
+    max_lag_days: 30
+    probe_sql: probes/incident_scan.sql
+    lever: { action: fulfilment_escalation, owner_role: vp_ops, lag_days: 10, save_rate: [0.50, 0.80] }
+  - id: seasonality
+    type: external_uncontrollable
+    evidence_sources: [historical_series]
+    max_lag_days: 0
+    lever: null
+
+# [5] LINEAGE
+lineage:
+  upstream:
+    - product_ops.ticket → metric.p1_resolution_time  (filter to P1, median)
+  joins:
+    - crm.account ON account_id  (region, segment enrichment)
+  downstream: [metric.gross_renewal_rate, dashboard.support_sla]
+
+# [6] ACCESS RESTRICTIONS — the support lead owns this queue, so unlike the
+#     revenue contracts they see every region here.
+access:
+  row:
+    region:
+      cfo: ["*"]
+      cro: ["*"]
+      vp_engineering: ["*"]
+      support_lead: ["*"]
+      vp_sales: [own_region]
+      analyst: [own_region]
+  column:
+    account_name: [cfo, cro, vp_engineering, vp_sales, analyst, support_lead]
+    subject:      [vp_engineering, analyst, support_lead]
+  domain:
+    segment: { support_lead: [smb, mid_market, enterprise] }
+  masking:
+    account_name: hash_alias
+
+history_start: 2025-09-01
+seasonal_period_days: 365
