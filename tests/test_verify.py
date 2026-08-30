@@ -108,6 +108,67 @@ def test_the_not_real_scenarios_close_at_verify_with_no_model_calls(
     assert case.decomposition is None and case.verdict is None
 
 
+def test_exactly_one_movement_in_the_whole_corpus_survives_verify(
+    con: duckdb.DuckDBPyConnection,
+    contracts: dict[str, KPIContract],
+    sealed: dict[str, dict],
+) -> None:
+    """The end-to-end statement of what Stage 1 is for, and the strongest single
+    assertion in P1.
+
+    Four regions x twelve periods produce **four** material movements (see
+    `tests/test_materiality.py`). Verify closes three of them and opens one, and
+    the one it opens is scenario A. Every close is for a different reason:
+
+    ``West 2026-03``   artefact          — one credit note is 71% of the movement
+    ``West 2026-04``   artefact          — the same batch's absence, read forwards
+    ``North 2026-02``  definition_drift  — the formula changed, the business did not
+    ``East 2026-04``   opens             — real, material, and nobody's arithmetic
+
+    §15: *"a surprising number of business panics die right here — each saving
+    three days."* Three of four is the measurement behind that sentence.
+    """
+    from casefile.metric import calendar_months, value
+    from casefile.stats.materiality import assess
+
+    contract = contracts["net_revenue"]
+    periods = calendar_months(date(2023, 5, 1), date(2026, 4, 30))
+    m = contract.materiality
+
+    opened: dict[tuple[str, str], str | None] = {}
+    for region in ("East", "West", "North", "APAC"):
+        for period in periods[-12:]:
+            series = [
+                v
+                for v in (
+                    value(con, contract, p, {"region": region})
+                    for p in periods[: periods.index(period) + 1]
+                )
+                if v is not None
+            ]
+            verdict = assess(
+                series,
+                period=12,
+                relative=m.relative,
+                absolute=m.absolute,
+                z_threshold=m.z_threshold,
+                min_persistence=m.min_persistence,
+            )
+            if not verdict.passed:
+                continue
+            result = verify(con, contract, period, {"region": region})
+            opened[(region, period)] = None if result.passed else first_failure(result)
+
+    assert len(opened) == 4
+    survived = [key for key, failure in opened.items() if failure is None]
+    truth = sealed["A"]
+
+    assert survived == [(truth["dimensions"]["region"], truth["period"])]
+    assert opened[("West", "2026-03")] == "artefact"
+    assert opened[("West", "2026-04")] == "artefact"
+    assert opened[("North", "2026-02")] == "definition_drift"
+
+
 def test_verify_cannot_reach_the_llm_layer_at_all(
     con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
 ) -> None:
@@ -325,6 +386,32 @@ def test_records_booked_across_the_period_boundary_are_an_artefact(
 
     assert artefact.passed is False
     assert "boundary" in artefact.detail
+
+
+def test_a_refund_batch_explains_the_month_after_it_as_well(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> None:
+    """A movement is a difference, so a single record dominates it whichever side
+    it sits on. West's March credit note makes April look like a recovery of
+    exactly its own size, and a check reading April alone would call that real —
+    then send somebody to find out why business improved when nothing did.
+
+    The number is what pins it: April's dominating record has to be **the March
+    credit note**, not the largest April invoice line, and only a check that
+    reads both periods can see it.
+    """
+    from casefile.data.scm import REFUND_AMOUNT
+
+    result = verify(con, contracts["net_revenue"], "2026-04", {"region": "West"})
+    artefact = next(c for c in result.checks if c.name == "artefact")
+    movement = trigger_for(con, contracts["net_revenue"], "2026-04", {"region": "West"})
+
+    assert movement.delta > 0, "April looks like a recovery"
+    assert result.passed is False
+    assert artefact.statistic == pytest.approx(
+        REFUND_AMOUNT / abs(movement.delta), rel=0.02
+    ), "the dominating record is an April invoice line, not March's credit note"
+    assert artefact.statistic is not None and artefact.statistic > 0.8
 
 
 def test_a_median_kpi_has_no_single_record_share(

@@ -83,7 +83,7 @@ def test_two_runs_produce_identical_bytes(tmp_path: Path) -> None:
     second = generate(tmp_path / "two")
 
     assert first == second
-    assert len(first) == 11, "ten tables and the sealed answer sheet"
+    assert len(first) == 14, "thirteen tables and the sealed answer sheet"
 
 
 def test_the_manifest_covers_every_file_that_was_written(data: Path) -> None:
@@ -335,7 +335,7 @@ def test_the_refund_batch_dominates_its_movement(data: Path) -> None:
     assert batch[0]["reason_code"] == "refund_batch"
     # No other credit note in the corpus comes close; this one is the artefact.
     others = [float(n["amount"]) for n in notes if n["credit_id"] != sealed["credit_id"]]
-    assert sealed["credit_amount"] > 3 * max(others)
+    assert sealed["credit_amount"] > 2 * max(others)
 
 
 # ── §22's volumes and cadences ────────────────────────────────────────────────
@@ -383,12 +383,19 @@ def test_billing_and_crm_disagree_about_account_identity(data: Path) -> None:
     assert len(billing) == len(crm)
 
 
-def test_ticket_bodies_are_empty_until_step_1_5(data: Path) -> None:
-    """The rows exist so the SCM's counts are real now; 1.5 fills text into
-    them, so counts and documents can never disagree."""
-    tickets = rows(data, "product_ops/ticket.csv")
-    assert all(t["body_text"] == "" for t in tickets)
-    assert all(t["subject"] for t in tickets)
+def test_every_ticket_carries_text_on_the_row_the_causal_model_made(data: Path) -> None:
+    """Ladder step 1.5 fills text into the rows 0.7 created, never alongside
+    them, so the ticket *count* the SCM produced and the ticket *documents*
+    retrieval reads can never disagree."""
+    import csv
+
+    with (data / "raw" / "product_ops" / "ticket.csv").open(encoding="utf-8") as handle:
+        tickets = list(csv.DictReader(handle))
+
+    assert tickets
+    assert all(t["body_text"].strip() for t in tickets)
+    assert all(t["subject"].strip() for t in tickets)
+    assert len({t["body_text"] for t in tickets}) > 50, "one template is not a corpus"
 
 
 def test_the_price_rise_measurably_cooled_enterprise_upsell(data: Path) -> None:

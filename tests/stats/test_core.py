@@ -106,6 +106,20 @@ def test_a_single_period_past_the_threshold_is_a_spike_not_a_movement() -> None:
     assert persistence([0.0, 0.0, -4.0], 3.0) == 1
 
 
+def test_a_step_change_persists_on_the_drift_that_preceded_it() -> None:
+    """The shape §25 A actually has, and the reason for the second threshold.
+
+    A step has exactly one period at 3 sigma — the one it happened in. Requiring
+    two would make §23's rule unsatisfiable for the case it exists to catch, so
+    the periods before the break need only stay on the same side of expected.
+    Without hysteresis this series scores 1 and the headline case never opens.
+    """
+    drifting_then_breaking = [0.4, -1.5, -1.4, -12.0]
+
+    assert persistence(drifting_then_breaking, 3.0) == 3
+    assert persistence(drifting_then_breaking, 3.0, continuation=3.0) == 1
+
+
 def test_a_rebound_has_not_persisted() -> None:
     """A fall then a rise is a reversion, not two periods of trouble. Counting
     |z| alone would score this 2 and open a case on a metric that recovered."""
