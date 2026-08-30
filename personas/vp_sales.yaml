@@ -1,0 +1,9 @@
+# ── personas/vp_sales.yaml ─────────────────────────────────────────────
+#
+# §10's owner: "VP Sales, East". Scoped to a region, which is the point —
+# `access.row.region.vp_sales` is `[own_region]`, and without `region` here that
+# rule has nothing to resolve against.
+id: vp_sales_east
+role_key: vp_sales
+label: VP Sales, East
+region: East

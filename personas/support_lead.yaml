@@ -1,0 +1,20 @@
+# ── personas/support_lead.yaml ─────────────────────────────────────────
+#
+# Scenario F (§25), and the one the security test is really about: "Support Lead
+# opens case A → region + segment filter, names hashed, ₹ banded, redaction
+# stated on the page".
+#
+# Three restrictions land on this persona at once and none of them is written
+# here — they are all consequences of `role_key` meeting §14.1's access rules:
+#
+#   row     region       [own_region]        → East only
+#   domain  segment      [smb, mid_market]   → the enterprise accounts withheld
+#   column  account_name not granted         → hash_alias
+#           amount_net   not granted         → band_1_5_cr
+#
+# The two accounts carrying scenario A are enterprise, so this persona sees that
+# a movement happened and is told, in words, what it is not being shown.
+id: support_lead_east
+role_key: support_lead
+label: Support Lead, East
+region: East

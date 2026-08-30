@@ -1,0 +1,15 @@
+# ── personas/cfo.yaml ──────────────────────────────────────────────────
+#
+# The four personas of §11 Screen 4. Each is exactly what `models.Persona`
+# holds and nothing more: §30 keeps the treaty minimal on purpose, and a
+# rendering preference invented here before narration needs it is a field three
+# people have to agree to remove later.
+#
+# `role_key` is the key §14.1's `access` rules are written against — it is what
+# entitlement resolves, so a typo here is an empty page rather than an error.
+# `region` is what resolves `own_region` in those rules; null means the persona
+# is not scoped to one, which the access table then has to grant explicitly.
+id: cfo
+role_key: cfo
+label: CFO
+region: null
