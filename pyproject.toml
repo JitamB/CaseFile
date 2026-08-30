@@ -22,9 +22,20 @@ dependencies = [
   "duckdb>=1.0",
   "scipy>=1.11",
   "statsmodels>=0.14",
+  "rank_bm25>=0.2",
 ]
 
 [project.optional-dependencies]
+# §18 names sentence-transformers with all-MiniLM-L6-v2. It is implemented
+# (casefile.retrieval.rank.MiniLMRanker) and it is not a default dependency: it
+# pulls ~2 GB of torch, which CI would install on every push and which does not
+# fit on the machine this project is built on. Measured recall@15 over the
+# authored signal documents is 1.000 for BM25 on every driver, so there is
+# nothing left for an embedding to recover — see the 1.6 PR.
+embed = [
+  "sentence-transformers>=3.0",
+]
+
 dev = [
   "pytest>=8.0",
   "ruff>=0.5",
@@ -49,12 +60,13 @@ disallow_untyped_defs = true
 warn_unused_ignores = true
 plugins = ["pydantic.mypy"]
 
-# statsmodels ships no py.typed marker, so mypy cannot see into it. The choice
-# is between this and an inline ignore on every import; a named override says
-# "this library is untyped upstream" once, where an inline ignore reads as "this
-# line is a problem" at each call site.
+# Untyped upstream, or — for sentence_transformers — deliberately not installed:
+# it lives behind the `embed` extra and CI does not install it, so mypy would
+# otherwise fail on an import that is guarded by a try/except at runtime. A named
+# override says "this library is untyped or optional" once, where an inline
+# ignore reads as "this line is a problem" at each call site.
 [[tool.mypy.overrides]]
-module = ["statsmodels.*"]
+module = ["statsmodels.*", "rank_bm25.*", "sentence_transformers.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
