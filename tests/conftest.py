@@ -25,10 +25,16 @@ def generated(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture(scope="session")
-def warehouse(generated: Path) -> Path:
-    """The conformed DuckDB database built from that corpus."""
+def warehouse(generated: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """The conformed DuckDB database built from that corpus.
+
+    Deliberately written *outside* `generated`. The database is derived, not
+    generated output, and putting it in the corpus directory made
+    `test_the_manifest_covers_every_file_that_was_written` pass or fail
+    depending on which test module ran first.
+    """
     return build(
         raw_dir=generated / "raw",
-        db_path=generated / "casefile.duckdb",
+        db_path=tmp_path_factory.mktemp("warehouse") / "casefile.duckdb",
         alias_path=Path(__file__).resolve().parents[1] / "data" / "account_alias.csv",
     )
