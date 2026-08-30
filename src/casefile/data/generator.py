@@ -33,6 +33,7 @@ from casefile.data.scm import (
     AS_OF,
     INTEGRATION_ONSET,
     LOST_REASONS,
+    OPS_END,
     OPS_START,
     PRICING_ONSET,
     PRICING_UPLIFT,
@@ -181,11 +182,15 @@ def _tables(
 
 
 def _accounts(world: World, rng: random.Random) -> list[list[Any]]:
+    """`_synced_at` is the **batch** that last carried the row, not the day the
+    customer signed. Stamping it from `first_contract_date` made every account
+    look 3.5 years stale, which would have failed §15 S1's freshness check on a
+    source that is in fact refreshed nightly."""
     return [
         [
             a.account_id, a.account_name, a.region, a.segment, a.industry,
             f"U-{rng.randint(100, 199)}", a.first_contract_date.isoformat(),
-            f"U-{rng.randint(200, 299)}", _synced(a.first_contract_date, rng),
+            f"U-{rng.randint(200, 299)}", _batch_synced(rng),
         ]
         for a in world.accounts
     ]
@@ -222,7 +227,7 @@ def _billing(
 
     for month in month_range(SPAN_START, SPAN_END):
         for account in world.accounts:
-            invoice_date = min(_safe_month_day(month, 28), SPAN_END)
+            invoice_date = min(_month_end(month), SPAN_END)
             share = world.recurring_share(account, invoice_date)
             if share == 0.0:
                 continue
@@ -383,7 +388,7 @@ def _tickets(world: World, rng: random.Random) -> list[list[Any]]:
     rows: list[list[Any]] = []
     counter = 0
     for account in world.accounts:
-        for day in day_range(OPS_START, SPAN_END):
+        for day in day_range(OPS_START, OPS_END):
             count = world.daily_tickets.get((account.account_id, day), 0)
             for _ in range(count):
                 counter += 1
@@ -394,9 +399,19 @@ def _tickets(world: World, rng: random.Random) -> list[list[Any]]:
                     else rng.choice(TICKET_CATEGORIES)
                 )
                 priority = rng.choices(("P1", "P2", "P3", "P4"), (0.08, 0.22, 0.45, 0.25))[0]
-                created = datetime.combine(day, datetime.min.time()) + timedelta(
-                    minutes=rng.randint(8 * 60, 20 * 60)
+                # Round the clock, weighted to business hours. Confining tickets
+                # to 08:00-20:00 left a ≤15-minute source looking ten hours
+                # stale every night, which §15 S1 would read as a broken feed.
+                minute = (
+                    rng.randint(8 * 60, 20 * 60)
+                    if rng.random() < 0.82
+                    else rng.randint(0, 24 * 60 - 1)
                 )
+                created = datetime.combine(day, datetime.min.time()) + timedelta(
+                    minutes=min(minute, 24 * 60 - 1)
+                )
+                if created > AS_OF:
+                    continue  # the stream reaches the present, not past it
                 responded = created + timedelta(minutes=rng.randint(5, 240))
                 hours = rng.uniform(2, 96) * (2.1 if priority == "P1" else 1.0)
                 resolved = responded + timedelta(hours=hours)
@@ -414,11 +429,13 @@ def _tickets(world: World, rng: random.Random) -> list[list[Any]]:
 
 def _deploys(rng: random.Random) -> list[list[Any]]:
     rows: list[list[Any]] = []
-    for index, day in enumerate(day_range(OPS_START, SPAN_END)):
+    for index, day in enumerate(day_range(OPS_START, OPS_END)):
         for _ in range(rng.randint(2, 5)):
             when = datetime.combine(day, datetime.min.time()) + timedelta(
                 minutes=rng.randint(0, 1439)
             )
+            if when > AS_OF:
+                continue
             rows.append([
                 f"DEP-{len(rows) + 1:05d}", rng.choice(SERVICES),
                 when.isoformat(timespec="seconds"),
@@ -431,11 +448,13 @@ def _deploys(rng: random.Random) -> list[list[Any]]:
 
 def _incidents(world: World, rng: random.Random) -> list[list[Any]]:
     rows: list[list[Any]] = []
-    for month in month_range(OPS_START, SPAN_END):
+    for month in month_range(OPS_START, OPS_END):
         for _ in range(rng.randint(3, 8)):
             started = datetime.combine(
                 _safe_month_day(month, rng.randint(1, 28)), datetime.min.time()
             ) + timedelta(minutes=rng.randint(0, 1439))
+            if started > AS_OF:
+                continue
             affected = rng.sample([a.account_id for a in world.accounts], rng.randint(1, 9))
             rows.append([
                 f"INC-{len(rows) + 1:05d}", rng.choice(SERVICES),
@@ -473,6 +492,20 @@ def _ingested(when: date, rng: random.Random, low: int, high: int) -> str:
 
 def _synced(when: date, rng: random.Random) -> str:
     return _ingested(when, rng, low=12, high=24)
+
+
+def _batch_synced(rng: random.Random) -> str:
+    """CRM's nightly batch: the run that last carried the whole account table.
+    Rows that never change still arrive in it, which is exactly why the account
+    table's watermark is recent even though nobody edited a row."""
+    return (AS_OF - timedelta(hours=rng.uniform(5.0, 9.0))).isoformat(timespec="seconds")
+
+
+def _month_end(month: date) -> date:
+    """The last day of `month` — where a billing close actually lands. Invoicing
+    on the 28th put the final batch 52h behind `AS_OF` against a 26h SLA."""
+    following = date(month.year + month.month // 12, month.month % 12 + 1, 1)
+    return following - timedelta(days=1)
 
 
 def _safe_month_day(month: date, day: int) -> date:
