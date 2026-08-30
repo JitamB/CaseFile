@@ -276,13 +276,15 @@ def _term_value(
     for dimension, value in dimensions.items():
         if _has_column(con, term.table, dimension):
             where.append(f"{term.table}.{dimension} = ?")
-        elif _has_column(con, term.table, "account_id"):
+        elif _has_column(con, term.table, "account_id") and _has_column(
+            con, "account", dimension
+        ):
             joins = " JOIN crm.account AS account USING (account_id)"
             where.append(f"account.{dimension} = ?")
         else:
             raise FormulaError(
                 f"{term.table} cannot be sliced by {dimension!r}: the column is absent "
-                "and there is no account_id to reach crm.account through"
+                "and crm.account does not carry it either"
             )
         params.append(value)
 
@@ -317,6 +319,29 @@ def _check_filters_apply(contract: KPIContract, parsed: Formula) -> None:
             f"{contract.id}: {orphans} name no table the formula reads "
             f"({', '.join(parsed.tables)}), so they would filter nothing"
         )
+
+
+def sliceable(
+    con: duckdb.DuckDBPyConnection, contract: KPIContract, dimension: str
+) -> bool:
+    """Whether *every* term of the formula can carry this dimension.
+
+    Not every KPI decomposes every way §14.1 lists. `net_revenue` subtracts
+    credit notes, and a credit note has no product — so a per-product split would
+    silently omit the credit side and the shares would not sum to the movement.
+    Stage 2 skips such a dimension rather than reporting a decomposition that
+    does not add up.
+    """
+    formula = parse(contract.formula)
+    for term in (*formula.numerator, *formula.denominator):
+        if _has_column(con, term.table, dimension):
+            continue
+        if _has_column(con, term.table, "account_id") and _has_column(
+            con, "account", dimension
+        ):
+            continue
+        return False
+    return True
 
 
 def value(
