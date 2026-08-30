@@ -30,6 +30,7 @@ dev = [
   "ruff>=0.5",
   "mypy>=1.10",
   "types-PyYAML>=6.0",  # mypy runs on src/ in CI; contract.py imports yaml
+  "scipy-stubs>=1.11",  # scipy ships no py.typed; stubs exist, so use them
 ]
 
 [tool.hatch.build.targets.wheel]
