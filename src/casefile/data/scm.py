@@ -52,7 +52,7 @@ SEGMENTS = ("enterprise", "mid_market", "smb")
 PRODUCTS = ("PRD-CORE", "PRD-SYNC", "PRD-INSIGHT", "PRD-GUARD", "PRD-FLOW", "PRD-EDGE")
 INDUSTRIES = ("manufacturing", "retail", "bfsi", "healthcare", "logistics", "media")
 
-# ── The exogenous events, sealed into ground_truth.json ───────────────────────
+# ── The exogenous events, sealed into the answer sheet ───────────────────────
 
 TREATED = ("ACME", "NORTHWIND")
 INTEGRATION_ONSET = date(2026, 3, 12)
@@ -429,9 +429,14 @@ class World:
             return 0.0
         return share + self.expansion_arr(account, day) / account.arr
 
-    def ground_truth(self) -> dict[str, object]:
-        """Sealed. `tools/check_ground_truth_isolation.py` keeps every module
-        outside `tests/` from reading it back."""
+    def answer_sheet(self) -> dict[str, object]:
+        """What we injected, for `tests/` to grade recovery against.
+
+        Named for the concept rather than the filename on purpose: only the
+        module that *writes* the file should have to name it, and this one does
+        not write anything. Keeping the isolation rule's exemption list at a
+        single entry is worth a rename.
+        """
         treated_ids = [a.account_id for a in self.accounts if self.is_treated(a)]
         return {
             "scenario": "A",
