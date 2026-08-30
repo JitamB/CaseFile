@@ -1,0 +1,103 @@
+# ── contracts/nrr.yaml ─────────────────────────────────────────────────
+id: nrr
+label: Net Revenue Retention
+owner_role: cfo
+
+# [1] DEFINITION
+definition: >
+  Recurring revenue retained and grown on the existing customer base, as a
+  share of the revenue that was up for renewal. Renewals plus expansion over
+  the renewable base; new logos are excluded by construction, which is what
+  separates this from growth.
+unit: ratio
+direction: up_is_good
+grain: [date, account_id, region]
+calendar: fiscal_445
+
+# [2] CALCULATION — §23's `(ARR0 + Exp - Contr - Churn) / ARR0`, expressed at
+#     the grain the CRM actually records: contraction and churn are already
+#     inside `arr_renewed`, which is the retained amount rather than the due one.
+formula: (SUM(renewal.arr_renewed) + SUM(opportunity.arr_value)) / SUM(renewal.arr_up_for_renewal)
+filters:
+  - renewal.outcome <> 'open'
+  - opportunity.type = 'expansion'
+  - opportunity.closed_won = 1
+refresh: { source: crm, cadence: 24h, sla_hours: 24 }
+
+epochs:
+  - { effective_from: 2023-04-01,
+      formula: "(SUM(renewal.arr_renewed) + SUM(opportunity.arr_value)) / SUM(renewal.arr_up_for_renewal)" }
+
+# [+] COMPOSITION — §23: K1 + K2 + K3 feed K5.
+composition:
+  - { kpi: gross_renewal_rate, weight: renewable_base, transform: identity }
+  - { kpi: expansion_arr,      weight: renewable_base, transform: over_renewable_base }
+decomposition_dims: [region, segment]
+
+# [3] THRESHOLDS
+materiality:
+  relative: 0.03
+  absolute: 0.02
+  min_persistence: 2
+  z_threshold: 3.0
+data_quality:
+  max_single_record_share: 0.35
+  min_completeness: 0.98
+
+# [4] DRIVERS
+drivers:
+  - id: integration_delay
+    type: internal_controllable
+    evidence_sources: [tickets, crm_notes, deploy_log]
+    max_lag_days: 45
+    probe_sql: probes/ticket_spike.sql
+    lever: { action: prioritise_integration_fix, owner_role: vp_engineering,
+             lag_days: 14, save_rate: [0.75, 1.00] }
+  - id: pricing_change
+    type: internal_controllable
+    evidence_sources: [price_book, crm_notes]
+    max_lag_days: 60
+    probe_sql: probes/price_delta.sql
+    lever: { action: pricing_review, owner_role: cro, lag_days: 30, save_rate: [0.30, 0.60] }
+  - id: competitor_offer
+    type: external
+    evidence_sources: [crm_lost_reason, news]
+    max_lag_days: 90
+    probe_sql: probes/lost_reason_scan.sql
+    lever: { action: competitive_desk_review, owner_role: vp_sales,
+             lag_days: 7, save_rate: [0.20, 0.50] }
+  - id: seasonality
+    type: external_uncontrollable
+    evidence_sources: [historical_series]
+    max_lag_days: 0
+    lever: null
+
+# [5] LINEAGE
+lineage:
+  upstream:
+    - crm.renewal     → metric.nrr  (retained base)
+    - crm.opportunity → metric.nrr  (expansion)
+  joins:
+    - crm.account ON account_id  (region, segment enrichment)
+  downstream: [dashboard.exec_revenue]
+
+# [6] ACCESS RESTRICTIONS
+access:
+  row:
+    region:
+      cfo: ["*"]
+      cro: ["*"]
+      vp_sales: [own_region]
+      analyst: [own_region]
+      support_lead: [own_region]
+  column:
+    account_name:       [cfo, cro, vp_sales, analyst]
+    arr_up_for_renewal: [cfo, cro, analyst]
+  domain:
+    segment: { support_lead: [smb, mid_market] }
+  masking:
+    account_name:       hash_alias
+    arr_up_for_renewal: band_1_5_cr
+
+history_start: 2023-04-01
+seasonal_period_days: 365

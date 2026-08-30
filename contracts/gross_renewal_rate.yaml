@@ -1,0 +1,99 @@
+# ── contracts/gross_renewal_rate.yaml ──────────────────────────────────
+id: gross_renewal_rate
+label: Gross Renewal Rate
+owner_role: cro
+
+# [1] DEFINITION
+definition: >
+  Share of annual recurring revenue up for renewal in the period that was
+  actually renewed. Downgrades count as partial renewals at the retained
+  amount; churn counts as zero. Excludes accounts whose renewal is still open.
+unit: ratio
+direction: up_is_good
+grain: [date, account_id, region]
+calendar: fiscal_445
+
+# [2] CALCULATION
+formula: SUM(renewal.arr_renewed) / SUM(renewal.arr_up_for_renewal)
+filters:
+  - renewal.outcome <> 'open'
+refresh: { source: crm, cadence: 24h, sla_hours: 24 }
+
+# [+] DEFINITION EPOCHS
+epochs:
+  - { effective_from: 2023-04-01, formula: "SUM(renewal.arr_renewed) / SUM(renewal.arr_up_for_renewal)" }
+
+# [+] COMPOSITION — nothing arithmetic feeds this; §23's K6 -> K2 edge is causal,
+#     not compositional, and lives in the driver registry below instead.
+composition: []
+decomposition_dims: [region, segment, account]
+
+# [3] THRESHOLDS — a ratio, so both thresholds are in percentage points.
+materiality:
+  relative: 0.03
+  absolute: 0.02
+  min_persistence: 2
+  z_threshold: 3.0
+data_quality:
+  max_single_record_share: 0.35
+  min_completeness: 0.98
+
+# [4] DRIVERS
+drivers:
+  - id: integration_delay
+    type: internal_controllable
+    evidence_sources: [tickets, crm_notes, deploy_log]
+    max_lag_days: 45
+    probe_sql: probes/ticket_spike.sql
+    lever: { action: prioritise_integration_fix, owner_role: vp_engineering,
+             lag_days: 14, save_rate: [0.75, 1.00] }
+  - id: pricing_change
+    type: internal_controllable
+    evidence_sources: [price_book, crm_notes]
+    max_lag_days: 60
+    probe_sql: probes/price_delta.sql
+    lever: { action: pricing_review, owner_role: cro, lag_days: 30, save_rate: [0.30, 0.60] }
+  - id: competitor_offer
+    type: external
+    evidence_sources: [crm_lost_reason, news]
+    max_lag_days: 90
+    probe_sql: probes/lost_reason_scan.sql
+    lever: { action: competitive_desk_review, owner_role: vp_sales,
+             lag_days: 7, save_rate: [0.20, 0.50] }
+  - id: seasonality
+    type: external_uncontrollable
+    evidence_sources: [historical_series]
+    max_lag_days: 0
+    lever: null
+
+# [5] LINEAGE
+lineage:
+  upstream:
+    - crm.opportunity → crm.renewal            (renewal outcomes)
+    - crm.renewal     → metric.gross_renewal_rate  (aggregate)
+  joins:
+    - crm.account ON account_id  (region, segment enrichment)
+  downstream: [metric.net_revenue, metric.nrr, dashboard.renewals]
+
+# [6] ACCESS RESTRICTIONS
+access:
+  row:
+    region:
+      cfo: ["*"]
+      cro: ["*"]
+      vp_sales: [own_region]
+      analyst: [own_region]
+      support_lead: [own_region]
+  column:
+    account_name:      [cfo, cro, vp_sales, analyst]
+    arr_up_for_renewal: [cfo, cro, vp_sales, analyst]
+    contract_end:      [cfo, cro, vp_sales]
+  domain:
+    segment: { support_lead: [smb, mid_market] }
+  masking:
+    account_name:       hash_alias
+    arr_up_for_renewal: band_1_5_cr
+
+# [+] HISTORY
+history_start: 2023-04-01
+seasonal_period_days: 365

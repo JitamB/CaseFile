@@ -1,0 +1,87 @@
+# ── contracts/new_business_arr.yaml ────────────────────────────────────
+id: new_business_arr
+label: New Business ARR
+owner_role: cro
+
+# [1] DEFINITION
+definition: >
+  Annual recurring revenue from accounts signing their first contract in the
+  period. An account counts once, at the value of the opportunity that closed
+  it; subsequent growth on that account is expansion, not new business.
+unit: INR
+direction: up_is_good
+grain: [date, account_id, region]
+calendar: fiscal_445
+
+# [2] CALCULATION
+formula: SUM(opportunity.arr_value)
+filters:
+  - opportunity.type = 'new'
+  - opportunity.closed_won = 1
+refresh: { source: crm, cadence: 24h, sla_hours: 24 }
+
+epochs:
+  - { effective_from: 2023-04-01, formula: "SUM(opportunity.arr_value)" }
+
+composition: []
+decomposition_dims: [region, segment, account]
+
+# [3] THRESHOLDS
+materiality:
+  relative: 0.12
+  absolute: 1_500_000
+  min_persistence: 2
+  z_threshold: 3.0
+data_quality:
+  max_single_record_share: 0.35
+  min_completeness: 0.95
+
+# [4] DRIVERS
+drivers:
+  - id: pricing_change
+    type: internal_controllable
+    evidence_sources: [price_book, crm_notes]
+    max_lag_days: 60
+    probe_sql: probes/price_delta.sql
+    lever: { action: pricing_review, owner_role: cro, lag_days: 30, save_rate: [0.30, 0.60] }
+  - id: competitor_offer
+    type: external
+    evidence_sources: [crm_lost_reason, news]
+    max_lag_days: 90
+    probe_sql: probes/lost_reason_scan.sql
+    lever: { action: competitive_desk_review, owner_role: vp_sales,
+             lag_days: 7, save_rate: [0.20, 0.50] }
+  - id: seasonality
+    type: external_uncontrollable
+    evidence_sources: [historical_series]
+    max_lag_days: 0
+    lever: null
+
+# [5] LINEAGE
+lineage:
+  upstream:
+    - crm.opportunity → metric.new_business_arr  (filter to new, aggregate)
+  joins:
+    - crm.account ON account_id  (region, segment enrichment)
+  downstream: [metric.net_revenue]
+
+# [6] ACCESS RESTRICTIONS
+access:
+  row:
+    region:
+      cfo: ["*"]
+      cro: ["*"]
+      vp_sales: [own_region]
+      analyst: [own_region]
+      support_lead: [own_region]
+  column:
+    account_name: [cfo, cro, vp_sales, analyst]
+    arr_value:    [cfo, cro, vp_sales, analyst]
+  domain:
+    segment: { support_lead: [smb, mid_market] }
+  masking:
+    account_name: hash_alias
+    arr_value:    band_1_5_cr
+
+history_start: 2023-04-01
+seasonal_period_days: 365
