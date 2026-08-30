@@ -22,7 +22,7 @@
 | # | Document | Covers | Read if you want to know… |
 |---|---|---|---|
 | 01 | **[Problem & Solution](01-problem-and-solution.md)** | §1–12 | What we're solving, and what CaseFile is |
-| 02 | **[Architecture](02-architecture.md)** | §13–20 | How it's built — stages, artifacts, stack, cost |
+| 02 | **[Architecture](02-architecture.md)** | §14–20 | How it's built — stages, artifacts, stack, cost |
 | 03 | **[Data](03-data.md)** | §21–25 | Where the data comes from, the KPIs, the scenarios |
 | 04 | **[Team & Ownership](04-team.md)** | §26–31 | Who builds what, and the day-one protocol |
 | 05 | **[Execution & Roadmap](05-execution.md)** | §32–33 | Phases, first week, phase gates |
@@ -66,7 +66,6 @@ Cross-references in the text use `§N`. Resolve them here.
 | 10 | Worked Example | [01](01-problem-and-solution.md) |
 | 11 | User Flow | [01](01-problem-and-solution.md) |
 | 12 | How Each Component Answers the Problem | [01](01-problem-and-solution.md) |
-| 13 | Architecture Decision | [02](02-architecture.md) |
 | 14 | The Three Core Artifacts | [02](02-architecture.md) |
 | 15 | The Twelve Stages | [02](02-architecture.md) |
 | 16 | Data Flow | [02](02-architecture.md) |
@@ -125,5 +124,5 @@ been carried into these nine files, and where the two disagree, `docs/` wins.
 
 Its one section worth re-reading is the evaluation of the four rejected architectures —
 why not an agent loop, a platform-native build, or a knowledge graph. That reasoning is
-summarised in [§13 and §18](02-architecture.md), and belongs in the business proposal's
+summarised in [§18](02-architecture.md), and belongs in the business proposal's
 solution-design section.
