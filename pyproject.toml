@@ -16,6 +16,11 @@ requires-python = ">=3.11"
 # STL then robust-z, and its tests are the step's verify command. They cost about
 # 50 MB and a few seconds. sentence-transformers stays out — ~2 GB of torch for a
 # ranking job over ~900 documents, behind the `embed` extra CI does not install.
+#
+# anthropic lands in default deps, not behind an extra, at the ladder step that
+# adds AnthropicProvider (§18, D-2) — a few MB, not a reason to gate it. CI never
+# calls it live (§43: CASEFILE_LLM_REPLAY defaults on), but mypy still type-checks
+# the module that imports it, so it has to be installed either way.
 dependencies = [
   "pydantic>=2.7",
   "pyyaml>=6.0",
@@ -23,6 +28,7 @@ dependencies = [
   "scipy>=1.11",
   "statsmodels>=0.14",
   "rank_bm25>=0.2",
+  "anthropic>=1.2",
 ]
 
 [project.optional-dependencies]

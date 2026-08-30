@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
+from casefile.llm.anthropic_provider import AnthropicProvider, model_class_from_env
 from casefile.llm.base import CacheMiss, LLMProvider, Prompt
 from casefile.llm.pricing import PRICES, USD_INR, cost_inr
 from casefile.llm.replay import DEFAULT_CACHE_DIR, CacheEntry, ReplayProvider, cache_key
@@ -18,6 +19,7 @@ __all__ = [
     "DEFAULT_CACHE_DIR",
     "PRICES",
     "USD_INR",
+    "AnthropicProvider",
     "CacheEntry",
     "CacheMiss",
     "LLMProvider",
@@ -26,6 +28,7 @@ __all__ = [
     "StubProvider",
     "cache_key",
     "cost_inr",
+    "model_class_from_env",
     "provider_from_env",
 ]
 
@@ -35,6 +38,7 @@ if TYPE_CHECKING:
     # drifts from the protocol — rather than at some call site weeks later.
     _stub_conforms: LLMProvider = StubProvider()
     _replay_conforms: LLMProvider = ReplayProvider()
+    _anthropic_conforms: LLMProvider = AnthropicProvider()
 
 
 _TRUE = {"1", "true", "yes", "on"}
@@ -50,8 +54,4 @@ def provider_from_env() -> LLMProvider:
     if os.environ.get("CASEFILE_LLM_REPLAY", "true").strip().lower() in _TRUE:
         return ReplayProvider()
 
-    raise NotImplementedError(
-        "CASEFILE_LLM_REPLAY is off, but there is no live provider yet. It arrives at "
-        "ladder step 1.5 with the first real prompt (S3 annotation) — until then there is "
-        "nothing worth recording. Unset the variable to replay from llm_cache/."
-    )
+    return AnthropicProvider(model_class=model_class_from_env())
