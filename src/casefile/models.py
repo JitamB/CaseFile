@@ -280,6 +280,14 @@ class EvidenceItem(FrozenBase):
     and it *abstains*, capping confidence. Evidence of absence is not absence of
     evidence, and the validator below is what stops the two collapsing into each
     other the first time someone is in a hurry.
+
+    `quote` closes a gap the ladder's own verify text opened and the schema had
+    not yet answered: S4c's "every claim carries doc_id and a quoted span."
+    `doc_id` already had a home — `source.record_id`, the same field 4a's SQL
+    items use for their own record identifier. A literal span did not, so this
+    is a genuine additive field rather than an implementation detail — landed
+    solo, logged in DECISIONS.md and flagged for the G2 agenda, same as
+    `Persona.region` (§30 rule 1, nobody else reachable).
     """
 
     id: str
@@ -294,6 +302,7 @@ class EvidenceItem(FrozenBase):
     freshness_hours: float
     denominator: int | None = None
     coverage: float | None = None
+    quote: str | None = None
 
     @model_validator(mode="after")
     def _absence_is_counted(self) -> Self:
@@ -306,6 +315,11 @@ class EvidenceItem(FrozenBase):
             raise ValueError(
                 f"evidence {self.id}: uncheckable needs a coverage figure — "
                 "it is the number that distinguishes it from checked_absent"
+            )
+        if self.method == "llm_extraction" and self.outcome == "found" and not self.quote:
+            raise ValueError(
+                f"evidence {self.id}: an extracted claim needs the literal quote it "
+                "was read from — a paraphrase the model wrote is not a span"
             )
         return self
 

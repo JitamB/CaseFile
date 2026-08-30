@@ -225,7 +225,8 @@
       "strength": 0.7,
       "freshness_hours": 26.0,
       "denominator": null,
-      "coverage": null
+      "coverage": null,
+      "quote": "We're holding the signature until the integration backlog is cleared — that's the one blocker on our side."
     },
     {
       "id": "ev-005",
@@ -282,7 +283,8 @@
       "strength": 0.85,
       "freshness_hours": 0.2,
       "denominator": null,
-      "coverage": null
+      "coverage": null,
+      "quote": "The promotional pricing is available exclusively to customers in the APAC region through the end of Q2."
     },
     {
       "id": "ev-008",
