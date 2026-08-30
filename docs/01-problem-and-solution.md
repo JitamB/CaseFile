@@ -324,7 +324,7 @@ ours is built so it structurally cannot.
 ● Renewal Rate · Mid-Mkt  ↓ 4.1%    UNDETERMINED   —                   ₹0.9 Cr
 ● TTR P1 · NewProduct     ↑ 31%     LIKELY ⚠sparse  VP Engineering     —
 ○ Expansion ARR · APAC    ↑ 6.2%    NOT MATERIAL   (closed, no action)
-○ Revenue · West          ↓11.0%    NOT REAL       (refund batch — closed at Verify)
+○ Revenue · West          ↓ 5.9%    NOT REAL       (refund batch — closed at Verify)
 ```
 
 Ordered by case priority: ₹ at stake × confidence.
