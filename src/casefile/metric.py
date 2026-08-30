@@ -344,6 +344,23 @@ def sliceable(
     return True
 
 
+def term_total(
+    con: duckdb.DuckDBPyConnection,
+    contract: KPIContract,
+    terms: tuple[Term, ...],
+    start: date,
+    end: date,
+    dimensions: dict[str, str],
+) -> float:
+    """Sum of `terms` over one window — a formula's numerator or denominator,
+    evaluated on its own. `value()` below is the only caller that needs them
+    combined; Stage 2's ratio decomposition needs them apart."""
+    return sum(
+        term.sign * _term_value(con, contract, term, start, end, dimensions)
+        for term in terms
+    )
+
+
 def value(
     con: duckdb.DuckDBPyConnection,
     contract: KPIContract,
@@ -364,15 +381,9 @@ def value(
     dimensions = dimensions or {}
     _check_filters_apply(contract, parsed)
 
-    def total(terms: tuple[Term, ...]) -> float:
-        return sum(
-            term.sign * _term_value(con, contract, term, start, end, dimensions)
-            for term in terms
-        )
-
-    result = total(parsed.numerator)
+    result = term_total(con, contract, parsed.numerator, start, end, dimensions)
     if parsed.denominator:
-        bottom = total(parsed.denominator)
+        bottom = term_total(con, contract, parsed.denominator, start, end, dimensions)
         if bottom == 0:
             return None
         result /= bottom
