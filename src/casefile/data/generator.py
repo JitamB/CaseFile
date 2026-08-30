@@ -44,6 +44,9 @@ from casefile.data.scm import (
     REFUND_REASON,
     SCENARIO_B_DEAL_VALUE,
     SCENARIO_B_ONSET,
+    SCENARIO_C_END,
+    SCENARIO_C_MULTIPLIER,
+    SCENARIO_C_START,
     SPAN_END,
     SPAN_START,
     Account,
@@ -501,6 +504,10 @@ def _tickets(
     """
     rows: list[list[Any]] = []
     counter = 0
+    # §25 C: which P1 tickets take a supply delay's hit. Modifies an existing
+    # draw's result rather than adding one, so it cannot shift any later rng
+    # call's outcome — the same class of bug scenario B's first attempt hit.
+    scenario_c_accounts = {a.account_id for a in world.scenario_c_accounts()}
     for account in world.accounts:
         for day in day_range(OPS_START, OPS_END):
             count = world.daily_tickets.get((account.account_id, day), 0)
@@ -528,6 +535,12 @@ def _tickets(
                     continue  # the stream reaches the present, not past it
                 responded = created + timedelta(minutes=rng.randint(5, 240))
                 hours = rng.uniform(2, 96) * (2.1 if priority == "P1" else 1.0)
+                if (
+                    priority == "P1"
+                    and account.account_id in scenario_c_accounts
+                    and SCENARIO_C_START <= day < SCENARIO_C_END
+                ):
+                    hours *= SCENARIO_C_MULTIPLIER
                 resolved = responded + timedelta(hours=hours)
                 rows.append([
                     f"TKT-{counter:06d}", account.account_id, priority, category,

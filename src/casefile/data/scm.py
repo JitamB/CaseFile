@@ -112,6 +112,31 @@ SCENARIO_B_ONSET = date(2025, 9, 1)
 #: deal large enough to dominate the movement on its own.
 SCENARIO_B_PERIOD = "2025-10"
 
+# ── Scenario C — sparse history (§25) ────────────────────────────────────────
+# *"Sparse history — p1_resolution_time, product launched 2025-12-01, 8 months
+# < 2×365d. Peer-borrowed baseline fires; confidence_ceiling = Likely enforced
+# regardless of test outcomes."*
+#
+# `p1_resolution_time.yaml` already declares `history_start: 2025-09-01`
+# against a 365-day seasonal period — every case on this KPI is sparse by
+# construction, with no flag to set. What scenario C needs is a real,
+# material movement to exercise that path on: a supply delay that degrades
+# how long P1 tickets take to resolve, for a footprint and window chosen so
+# it cannot touch any other scenario's data (APAC, and resolution *time*, not
+# ticket *volume* — the one thing scenario A's competitor decoy in the same
+# region already varies).
+#
+# Modifies existing tickets' resolved-at, rather than adding rows: the same
+# rng draw for `hours` still happens whether or not a ticket qualifies, so
+# there is nothing here to shift a later draw's outcome the way scenario B's
+# first attempt did.
+SCENARIO_C_REGION = "APAC"
+SCENARIO_C_COUNT = 6
+SCENARIO_C_START = date(2026, 1, 1)
+SCENARIO_C_END = date(2026, 3, 1)  # exclusive
+SCENARIO_C_MULTIPLIER = 4.0
+SCENARIO_C_PERIOD = "2026-01"
+
 # ── Scenario D — the refund batch (§25) ──────────────────────────────────────
 # *"Not-real #1 — refund batch, single credit note = 71% of delta. Closed at
 # Verify, artefact, 0 LLM calls."*
@@ -433,15 +458,24 @@ class World:
         return max(candidates, key=lambda a: a.arr)
 
     def scenario_b_accounts(self) -> list[Account]:
-        """§25 B's footprint — the first `SCENARIO_B_COUNT` West accounts by
-        id. Not sampled: an unrelated change to how many accounts exist
-        upstream can only add or remove candidates from the tail, never
-        reshuffle which ones are picked first."""
+        """§25 B's footprint — the first `SCENARIO_B_COUNT` accounts of
+        `SCENARIO_B_REGION` by id. Not sampled: an unrelated change to how
+        many accounts exist upstream can only add or remove candidates from
+        the tail, never reshuffle which ones are picked first."""
         candidates = sorted(
             (a for a in self.accounts if a.region == SCENARIO_B_REGION),
             key=lambda a: a.account_id,
         )
         return candidates[:SCENARIO_B_COUNT]
+
+    def scenario_c_accounts(self) -> list[Account]:
+        """§25 C's footprint — the first `SCENARIO_C_COUNT` accounts of
+        `SCENARIO_C_REGION` by id, same selection rule as scenario B."""
+        candidates = sorted(
+            (a for a in self.accounts if a.region == SCENARIO_C_REGION),
+            key=lambda a: a.account_id,
+        )
+        return candidates[:SCENARIO_C_COUNT]
 
     def csat_deficit(self, account: Account, when: date) -> float:
         month_key = date(when.year, when.month, 1)
@@ -613,6 +647,7 @@ class World:
             "scenarios": {
                 "A": self._scenario_a(),
                 "B": self._scenario_b(),
+                "C": self._scenario_c(),
                 "D": self._scenario_d(),
                 "E": self._scenario_e(),
             },
@@ -728,6 +763,43 @@ class World:
                 "lost-reason fields on this footprint are unpopulated — coverage "
                 "≈ 0 on the source that would identify the cause, not a checked "
                 "and empty field"
+            ),
+            "closes_at": "adjudicate",
+        }
+
+    def _scenario_c(self) -> dict[str, object]:
+        """§25 C — sparse history. The verdict is real, but it can only ever
+        reach Likely: `p1_resolution_time` has under two seasonal cycles of
+        history no matter which period is tested, so §15 S1's peer-borrowed
+        baseline fires unconditionally and caps confidence there, before
+        Stage 5 or 6 ever runs a test.
+        """
+        accounts = [a.account_id for a in self.scenario_c_accounts()]
+        return {
+            "scenario": "C",
+            "description": (
+                "Sparse history — a real supply delay degrading P1 resolution time, "
+                "on a KPI with under two seasonal cycles of history."
+            ),
+            "kpi": "p1_resolution_time",
+            "period": SCENARIO_C_PERIOD,
+            "dimensions": {"region": SCENARIO_C_REGION},
+            "true_driver": "supply_delay",
+            "footprint_accounts": accounts,
+            "events": [
+                {
+                    "driver_id": "supply_delay",
+                    "role": "true_cause",
+                    "onset": SCENARIO_C_START.isoformat(),
+                    "accounts": accounts,
+                    "multiplier": SCENARIO_C_MULTIPLIER,
+                    "killed_by": None,
+                }
+            ],
+            "expected_verdict": "likely",
+            "expected_verdict_reason": (
+                "baseline is borrowed from peer regions — confidence_ceiling = "
+                "Likely applies regardless of what the four tests find"
             ),
             "closes_at": "adjudicate",
         }

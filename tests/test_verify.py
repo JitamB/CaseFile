@@ -248,6 +248,30 @@ def test_scenario_b_also_opens_with_every_check_green(
     assert result.confidence_ceiling is None
 
 
+def test_scenario_c_opens_sparse_and_capped_at_likely(
+    con: duckdb.DuckDBPyConnection,
+    contracts: dict[str, KPIContract],
+    sealed: dict[str, dict],
+) -> None:
+    """§25 C: `p1_resolution_time` is sparse by construction (§15's own
+    history_start vs. seasonal_period_days), not by a flag anyone sets — the
+    borrowed baseline and the Likely ceiling should just fall out of running
+    the real contract against the real data.
+
+    product_ops's own 15-minute SLA leaves this one provisional too — a
+    second, independent reason to cap at Likely rather than the sparse
+    baseline's own. Freshness never gates whether the case opens (§15), so
+    `result.passed` is still True.
+    """
+    truth = sealed["C"]
+    result = verify(con, contracts[truth["kpi"]], truth["period"], truth["dimensions"])
+
+    assert result.passed is True
+    assert all(check.passed for check in result.checks if check.name != "freshness")
+    assert result.baseline == "borrowed"
+    assert result.confidence_ceiling == "likely"
+
+
 def test_all_five_checks_are_reported_even_after_one_fails(
     con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
 ) -> None:
