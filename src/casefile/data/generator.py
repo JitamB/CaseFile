@@ -29,6 +29,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from casefile.data import corpus
 from casefile.data.scm import (
     AS_OF,
     INTEGRATION_ONSET,
@@ -51,7 +52,6 @@ from casefile.data.scm import (
     seasonal_factor,
 )
 
-TICKET_CATEGORIES = ("integration", "billing_query", "access", "performance", "how_to")
 SERVICES = ("sync-gateway", "billing-core", "insight-api", "edge-router")
 SEVERITIES = ("sev1", "sev2", "sev3")
 
@@ -132,6 +132,9 @@ def _tables(
         for product in subscriptions[a.account_id]
     }
     invoices, lines = _billing(world, rng, subscriptions, usage)
+    opportunities = _opportunities(world, rng)
+    authored = corpus.load_authored()
+    tickets = _tickets(world, rng, authored)
 
     yield "raw/crm/account.csv", (
         "account_id", "account_name", "region", "segment", "industry",
@@ -141,7 +144,11 @@ def _tables(
     yield "raw/crm/opportunity.csv", (
         "opp_id", "account_id", "type", "stage", "arr_value", "created_at",
         "close_date", "closed_won", "lost_reason_code", "owner_user_id", "_synced_at",
-    ), _opportunities(world, rng)
+    ), opportunities
+
+    yield "raw/crm/opportunity_note.csv", (
+        "note_id", "opp_id", "account_id", "author_user_id", "created_at", "body_text",
+    ), _opportunity_notes(world, rng, opportunities, authored)
 
     yield "raw/crm/renewal.csv", (
         "renewal_id", "account_id", "arr_up_for_renewal", "arr_renewed",
@@ -171,7 +178,16 @@ def _tables(
     yield "raw/product_ops/ticket.csv", (
         "ticket_id", "account_id", "priority", "category", "created_at",
         "first_response_at", "resolved_at", "status", "subject", "body_text",
-    ), _tickets(world, rng)
+    ), tickets
+
+    yield "raw/product_ops/ticket_message.csv", (
+        "message_id", "ticket_id", "author_user_id", "created_at", "body_text",
+    ), _ticket_messages(rng, tickets)
+
+    yield "raw/product_ops/news_item.csv", (
+        "news_id", "published_at", "source", "competitor", "region",
+        "headline", "body_text",
+    ), _news_items(rng, authored)
 
     yield "raw/product_ops/deploy_event.csv", (
         "deploy_id", "service", "deployed_at", "version",
@@ -413,10 +429,18 @@ def _renewals(world: World) -> list[list[Any]]:
     ]
 
 
-def _tickets(world: World, rng: random.Random) -> list[list[Any]]:
-    """`body_text` is left empty on purpose. Ladder step 1.5 fills text into
-    these rows, so the ticket *count* the SCM produced and the ticket
-    *documents* retrieval reads can never disagree."""
+def _tickets(
+    world: World, rng: random.Random, authored: list[corpus.Authored]
+) -> list[list[Any]]:
+    """Text is written onto the rows the SCM already decided existed, never
+    alongside them — so the ticket *count* the causal model produced and the
+    ticket *documents* retrieval reads can never disagree.
+
+    Authored tickets **replace** a generated body rather than adding a row, for
+    the same reason. A hand-written ticket that could not be attached to a real
+    one raises: a signal document nobody can retrieve is worse than none, because
+    it looks like coverage.
+    """
     rows: list[list[Any]] = []
     counter = 0
     for account in world.accounts:
@@ -428,7 +452,7 @@ def _tickets(world: World, rng: random.Random) -> list[list[Any]]:
                     "integration"
                     if world.is_treated(account) and day >= INTEGRATION_ONSET
                     and rng.random() < 0.7
-                    else rng.choice(TICKET_CATEGORIES)
+                    else corpus.category(rng)
                 )
                 priority = rng.choices(("P1", "P2", "P3", "P4"), (0.08, 0.22, 0.45, 0.25))[0]
                 # Round the clock, weighted to business hours. Confining tickets
@@ -453,9 +477,135 @@ def _tickets(world: World, rng: random.Random) -> list[list[Any]]:
                     responded.isoformat(timespec="seconds"),
                     resolved.isoformat(timespec="seconds") if resolved <= AS_OF else "",
                     "resolved" if resolved <= AS_OF else "open",
-                    f"{category.replace('_', ' ').title()} issue on {account.account_name}",
-                    "",
+                    corpus.subject(rng, category),
+                    corpus.ticket_body(rng, category, account.account_name),
                 ])
+
+    _apply_authored_tickets(rows, authored)
+    return rows
+
+
+def _apply_authored_tickets(rows: list[list[Any]], authored: list[corpus.Authored]) -> None:
+    by_account: dict[str, list[int]] = {}
+    for index, row in enumerate(rows):
+        by_account.setdefault(str(row[1]), []).append(index)
+
+    for document in authored:
+        if document.table != "product_ops.ticket":
+            continue
+        account = document.account
+        wanted = date.fromisoformat(document.date)
+        candidates = [
+            index
+            for index in by_account.get(account or "", [])
+            if abs((datetime.fromisoformat(str(rows[index][4])).date() - wanted).days) <= 3
+            and str(rows[index][9]) != ""
+        ]
+        if not candidates:
+            raise ValueError(
+                f"authored ticket {document.doc_id!r} names {account} on {wanted}, and no "
+                "generated ticket sits within three days of it — the document would be "
+                "committed but unretrievable"
+            )
+        index = candidates[len(candidates) // 2]
+        rows[index][3] = document.get("category", str(rows[index][3]))
+        rows[index][8] = document.doc_id.replace("-", " ").capitalize()
+        rows[index][9] = document.body
+
+
+def _ticket_messages(rng: random.Random, tickets: list[list[Any]]) -> list[list[Any]]:
+    """§22's `ticket_message`. Only P1 tickets carry a thread: those are the ones
+    somebody escalated, and generating a conversation for forty thousand
+    password resets would triple the corpus to say nothing."""
+    rows: list[list[Any]] = []
+    for ticket in tickets:
+        if ticket[2] != "P1":
+            continue
+        created = datetime.fromisoformat(str(ticket[5]))
+        for turn in range(rng.randint(1, 3)):
+            when = created + timedelta(hours=rng.uniform(1, 30) * (turn + 1))
+            if when > AS_OF:
+                break
+            rows.append([
+                f"MSG-{len(rows) + 1:06d}", ticket[0], f"U-{rng.randint(300, 349)}",
+                when.isoformat(timespec="seconds"), corpus.ticket_message(rng),
+            ])
+    return rows
+
+
+def _opportunity_notes(
+    world: World,
+    rng: random.Random,
+    opportunities: list[list[Any]],
+    authored: list[corpus.Authored],
+) -> list[list[Any]]:
+    """§22's `opportunity_note`, ~9k of them. The ordinary ones say nothing;
+    §24's point is that a needle in a stack of needles proves nothing."""
+    rows: list[list[Any]] = []
+    by_account: dict[str, list[list[Any]]] = {}
+    for opportunity in opportunities:
+        by_account.setdefault(str(opportunity[1]), []).append(opportunity)
+        for _ in range(rng.randint(2, 6)):
+            closed = date.fromisoformat(str(opportunity[6]))
+            when = closed - timedelta(days=rng.randint(0, 55))
+            if when < SPAN_START:
+                continue
+            rows.append([
+                f"NOTE-{len(rows) + 1:06d}", opportunity[0], opportunity[1],
+                f"U-{rng.randint(100, 199)}",
+                _ingested(when, rng, low=8, high=20), corpus.note_body(rng),
+            ])
+
+    for document in authored:
+        if document.table != "crm.opportunity_note":
+            continue
+        account = document.account or ""
+        if account not in world.by_id:
+            raise ValueError(
+                f"authored note {document.doc_id!r} names account {account!r}, which is "
+                "not in the corpus"
+            )
+        when = date.fromisoformat(document.date)
+        nearest = min(
+            by_account.get(account, []),
+            key=lambda o: abs((date.fromisoformat(str(o[6])) - when).days),
+            default=None,
+        )
+        rows.append([
+            document.doc_id, nearest[0] if nearest else "", account, "U-101",
+            datetime.combine(when, datetime.min.time()).isoformat(timespec="seconds"),
+            document.body,
+        ])
+    return rows
+
+
+def _news_items(rng: random.Random, authored: list[corpus.Authored]) -> list[list[Any]]:
+    """§22's 200 news items. Industry noise, plus the authored competitor
+    coverage that scenario A's Timing test refutes the decoy on."""
+    rows: list[list[Any]] = []
+    for index, month in enumerate(month_range(OPS_START, OPS_END)):
+        for _ in range(rng.randint(20, 28)):
+            when = _safe_month_day(month, rng.randint(1, 28))
+            if when > OPS_END:
+                continue
+            source, headline, body = corpus.news(rng)
+            rows.append([
+                f"NEWS-{len(rows) + 1:05d}",
+                datetime.combine(when, datetime.min.time()).isoformat(timespec="seconds"),
+                source, "", "", headline, body,
+            ])
+        del index
+
+    for document in authored:
+        if document.table != "product_ops.news_item":
+            continue
+        when = date.fromisoformat(document.date)
+        rows.append([
+            document.doc_id,
+            datetime.combine(when, datetime.min.time()).isoformat(timespec="seconds"),
+            "Sector Weekly", document.get("competitor"), document.get("region"),
+            document.get("headline"), document.body,
+        ])
     return rows
 
 

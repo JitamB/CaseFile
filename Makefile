@@ -16,11 +16,17 @@ data:
 	python -m casefile.data.generator
 	python -m casefile.data.loader
 
-# Not yet implemented. These fail loudly rather than succeeding vacuously — a
-# target that prints nothing and exits 0 reads as "it worked".
+# §41.3 calls this "rare; needs an API key". It needs neither: §24's fourth
+# control is that the noise is templates and only the signal is authored, so the
+# corpus regenerates from the seed like everything else. The authored documents
+# under data/corpus/authored/ are committed; this validates that each one still
+# attaches to something retrievable, and reports the noise floor.
 corpus:
-	@echo "make corpus arrives at ladder step 1.5 — data/corpus/" >&2; exit 1
+	python -m casefile.data.generator
+	python -m casefile.data.corpus
 
+# Not yet implemented. Fails loudly rather than succeeding vacuously — a target
+# that prints nothing and exits 0 reads as "it worked".
 demo:
 	@echo "make demo arrives at ladder step 3.1 — src/casefile/orchestrator.py" >&2; exit 1
 
