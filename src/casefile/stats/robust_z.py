@@ -57,25 +57,45 @@ def robust_z(residuals: Sequence[float]) -> tuple[float, ...]:
     return tuple((r - centre) / scale for r in residuals)
 
 
-def persistence(zscores: Sequence[float], threshold: float) -> int:
-    """How many periods the series has stayed past `threshold`, counting back
-    from the last observation.
+#: The bar a *preceding* period must clear for the run to continue: one robust
+#: deviation on the same side of expected. See `persistence`.
+CONTINUATION = 1.0
+
+
+def persistence(
+    zscores: Sequence[float], threshold: float, continuation: float = CONTINUATION
+) -> int:
+    """How many periods the movement has been running, counting back from the
+    last observation.
 
     §23's materiality rule is `|z| > 3 ∧ persistence ≥ 2`: a single period past
     the threshold is a spike, and two is a movement. Sign matters — a fall
     followed by a rebound has not persisted, it has reverted, and counting the
     absolute value alone would call that two periods of trouble.
+
+    **Two thresholds, not one.** The latest period must clear `threshold`; the
+    ones before it need only stay on the same side of expected by `continuation`.
+    Requiring 3σ in both would make the rule unsatisfiable for the case it exists
+    to catch: a step change has, by construction, exactly one period at 3σ — the
+    one it happened in — and everything before it is the old normal. §25 A is
+    exactly that shape (Feb -1.9, Mar -1.5, **Apr -13.6**), and a single-threshold
+    rule would refuse to open the headline case of the entire project.
+
+    Hysteresis like this is the standard construction in statistical process
+    control, and it says what a business person means by *"has this been going
+    the wrong way?"* rather than *"has it been catastrophic twice?"*
     """
     if not zscores:
         return 0
     last = zscores[-1]
     if abs(last) <= threshold:
         return 0
-    direction = 1.0 if last > 0 else -1.0
+    rising = last > 0
 
     count = 0
-    for z in reversed(zscores):
-        if abs(z) > threshold and (z > 0) == (direction > 0):
+    for index, z in enumerate(reversed(zscores)):
+        bar = threshold if index == 0 else continuation
+        if abs(z) > bar and (z > 0) == rising:
             count += 1
         else:
             break
