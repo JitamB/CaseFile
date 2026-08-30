@@ -88,7 +88,7 @@ def generate(out_dir: Path | str, seed: int | None = None) -> dict[str, str]:
     answer_sheet = out / "ground_truth.json"
     answer_sheet.parent.mkdir(parents=True, exist_ok=True)
     answer_sheet.write_text(
-        json.dumps(world.ground_truth(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(world.answer_sheet(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     written.append(answer_sheet)
 
