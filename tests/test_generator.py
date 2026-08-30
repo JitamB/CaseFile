@@ -24,9 +24,10 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import duckdb
 import pytest
 
-from casefile.contract import load
+from casefile.contract import load, load_all
 from casefile.data.generator import generate
 from casefile.data.scm import (
     AS_OF,
@@ -36,10 +37,14 @@ from casefile.data.scm import (
     INTEGRATION_ONSET,
     N_ENTERPRISE,
     OPS_START,
+    SCENARIO_B_COUNT,
+    SCENARIO_B_REGION,
     SPAN_END,
     SPAN_START,
     TREATED,
 )
+from casefile.engine.decompose import decompose
+from casefile.models import KPIContract
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,6 +55,18 @@ pytestmark = pytest.mark.gate0
 def data(generated: Path) -> Path:
     """The session-wide corpus from `conftest.py` — built once, not per module."""
     return generated
+
+
+@pytest.fixture(scope="module")
+def contracts() -> dict[str, KPIContract]:
+    return load_all(ROOT / "contracts")
+
+
+@pytest.fixture(scope="module")
+def con(warehouse: Path) -> duckdb.DuckDBPyConnection:
+    connection = duckdb.connect(str(warehouse), read_only=True)
+    yield connection
+    connection.close()
 
 
 def rows(data: Path, name: str) -> list[dict[str, str]]:
@@ -277,6 +294,58 @@ def test_the_east_lost_reasons_are_populated_and_name_no_competitor(data: Path) 
     assert len(populated) >= 12, f"only {len(populated)} populated lost reasons in East"
     assert len(populated) == len(window), "a lost East opportunity always states why"
     assert not [o for o in populated if o["lost_reason_code"] in COMPETITOR_LOST_REASONS]
+
+
+# ── §25 B: real, and unprovable from what the sources hold ───────────────────
+
+
+def test_scenario_bs_lost_reasons_are_never_populated(data: Path) -> None:
+    """The opposite of scenario A's ev-006: here the field is null on every
+    lost deal, so evidence.py's probe finds nothing to check — uncheckable,
+    not checked-absent."""
+    lost = [
+        o
+        for o in rows(data, "crm/opportunity.csv")
+        if o["opp_id"].startswith("OPPB-") and o["closed_won"] == "0"
+    ]
+    assert lost, "scenario B's injected deals produced no losses at all"
+    assert not any(o["lost_reason_code"] for o in lost)
+
+
+def test_scenario_b_accounts_keep_buying_something_after_the_loss(data: Path) -> None:
+    """The lost deal isn't the account going silent — it still wins smaller,
+    ordinary business. Only the one deal the competitor took disappears."""
+    won = [
+        o
+        for o in rows(data, "crm/opportunity.csv")
+        if o["opp_id"].startswith("OPPB-") and o["closed_won"] == "1"
+    ]
+    assert won
+
+
+def test_scenario_b_never_moves_scenario_as_already_measured_figures(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> None:
+    """§25 B is on `new_business_arr`, keyed off `crm.opportunity` alone — it
+    must not perturb East's net_revenue figures through the shared rendering
+    RNG stream. This is the same failure class that once silently un-churned
+    NORTHWIND: an unrelated addition reshuffling a later draw's outcome.
+
+    Reads the metric's actual computed value, credit notes included — raw
+    `invoice_line` alone would miss exactly the table this regression moves.
+    """
+    east = decompose(con, contracts["net_revenue"], "2026-04", {"region": "East"})
+    assert east.total_delta == pytest.approx(-26_642_279, abs=100)
+    assert east.concentration(2) == pytest.approx(0.9077, abs=0.001)
+
+
+def test_the_answer_sheet_names_scenario_bs_true_driver_and_footprint(data: Path) -> None:
+    sealed = truth(data)["scenarios"]["B"]
+    assert sealed["scenario"] == "B"
+    assert sealed["true_driver"] == "competitor_offer"
+    assert sealed["dimensions"] == {"region": SCENARIO_B_REGION}
+    assert len(sealed["footprint_accounts"]) == SCENARIO_B_COUNT
+    assert sealed["expected_verdict"] == "undetermined"
 
 
 # ── The sealed answer sheet ───────────────────────────────────────────────────

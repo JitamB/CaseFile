@@ -232,6 +232,22 @@ def test_the_headline_case_opens_with_every_check_green(
     assert result.confidence_ceiling is None
 
 
+def test_scenario_b_also_opens_with_every_check_green(
+    con: duckdb.DuckDBPyConnection,
+    contracts: dict[str, KPIContract],
+    sealed: dict[str, dict],
+) -> None:
+    """§25 B is real — Undetermined is Stage 6's call to make from evidence
+    coverage, not Verify's. If this closed here, evidence.py would never run
+    and there would be no case to abstain on."""
+    truth = sealed["B"]
+    result = verify(con, contracts[truth["kpi"]], truth["period"], truth["dimensions"])
+
+    assert result.passed is True
+    assert all(check.passed for check in result.checks)
+    assert result.confidence_ceiling is None
+
+
 def test_all_five_checks_are_reported_even_after_one_fails(
     con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
 ) -> None:

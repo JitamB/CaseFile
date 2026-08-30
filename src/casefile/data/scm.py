@@ -78,6 +78,40 @@ COMPETITOR_REGION = "APAC"
 
 CASE_PERIOD = (date(2026, 4, 1), date(2026, 4, 30))
 
+# ── Scenario B — competitor pressure the sources cannot see (§25) ────────────
+# *"Low confidence — true cause is a competitor offer the sources cannot see:
+# lost-reason fields left null, no notes on the footprint accounts in the
+# window, news feed does not cover the segment."*
+#
+# On `new_business_arr`, not a renewal: a lost new-logo deal carries no
+# ongoing state, so nothing here can move any other scenario's already-
+# measured figures the way a churned account's billing would. And unlike a
+# renewal, new-business wins have no fixed annual date to hang an injection
+# on — so the deal itself is injected outright, monthly, deterministically,
+# the same way scenario D's refund batch is an explicit row rather than a
+# nudge on the ordinary trickle.
+#
+# North wins one extra deal a month, every month, until the competitor
+# arrives — a real, sustained regional edge, not a spike invented for the
+# case window — then loses the same deal every month after, with the
+# lost-reason field never populated. `SCENARIO_B_COUNT` accounts each carry
+# one such deal, half switching at the onset and half a month later, so two
+# consecutive periods are each already depressed rather than one cliff.
+SCENARIO_B_REGION = "North"
+SCENARIO_B_COUNT = 8
+#: Small enough that no single deal dominates a month's total on its own —
+#: §15 S1's artefact check would otherwise (correctly) refuse this as a
+#: single-record batch, the same check that closes scenario D.
+SCENARIO_B_DEAL_VALUE = 1_100_000.0
+SCENARIO_B_ONSET = date(2025, 9, 1)
+#: The trigger period, measured rather than assumed: the onset month itself
+#: (September) is the *first* affected period and cannot show persistence —
+#: nothing before it moved. October is the second, comparing two already-
+#: depressed months against each other rather than against the pre-onset
+#: level, and it is where §15 S1's artefact check finds no organic North
+#: deal large enough to dominate the movement on its own.
+SCENARIO_B_PERIOD = "2025-10"
+
 # ── Scenario D — the refund batch (§25) ──────────────────────────────────────
 # *"Not-real #1 — refund batch, single credit note = 71% of delta. Closed at
 # Verify, artefact, 0 LLM calls."*
@@ -398,6 +432,17 @@ class World:
         candidates = [a for a in self.accounts if a.region == REFUND_REGION]
         return max(candidates, key=lambda a: a.arr)
 
+    def scenario_b_accounts(self) -> list[Account]:
+        """§25 B's footprint — the first `SCENARIO_B_COUNT` West accounts by
+        id. Not sampled: an unrelated change to how many accounts exist
+        upstream can only add or remove candidates from the tail, never
+        reshuffle which ones are picked first."""
+        candidates = sorted(
+            (a for a in self.accounts if a.region == SCENARIO_B_REGION),
+            key=lambda a: a.account_id,
+        )
+        return candidates[:SCENARIO_B_COUNT]
+
     def csat_deficit(self, account: Account, when: date) -> float:
         month_key = date(when.year, when.month, 1)
         level = self.csat.get((account.account_id, month_key), account.csat0)
@@ -567,6 +612,7 @@ class World:
             "as_of": AS_OF.isoformat(),
             "scenarios": {
                 "A": self._scenario_a(),
+                "B": self._scenario_b(),
                 "D": self._scenario_d(),
                 "E": self._scenario_e(),
             },
@@ -649,6 +695,39 @@ class World:
             "expected_verdict_reason": (
                 "n = 2 treated accounts, below the n >= 5 minimum for the dose test, "
                 "so Confirmed is unreachable by construction"
+            ),
+            "closes_at": "adjudicate",
+        }
+
+    def _scenario_b(self) -> dict[str, object]:
+        """§25 B — real, and unprovable from what the sources hold."""
+        accounts = [a.account_id for a in self.scenario_b_accounts()]
+        return {
+            "scenario": "B",
+            "description": (
+                "Low confidence — a competitor is the true cause of a new-business "
+                "shortfall, but the lost-reason field was never populated for it."
+            ),
+            "kpi": "new_business_arr",
+            "period": SCENARIO_B_PERIOD,
+            "dimensions": {"region": SCENARIO_B_REGION},
+            "true_driver": "competitor_offer",
+            "footprint_accounts": accounts,
+            "events": [
+                {
+                    "driver_id": "competitor_offer",
+                    "role": "true_cause",
+                    "onset": SCENARIO_B_ONSET.isoformat(),
+                    "accounts": accounts,
+                    "deal_value": SCENARIO_B_DEAL_VALUE,
+                    "killed_by": None,
+                }
+            ],
+            "expected_verdict": "undetermined",
+            "expected_verdict_reason": (
+                "lost-reason fields on this footprint are unpopulated — coverage "
+                "≈ 0 on the source that would identify the cause, not a checked "
+                "and empty field"
             ),
             "closes_at": "adjudicate",
         }
