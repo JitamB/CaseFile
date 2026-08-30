@@ -58,11 +58,14 @@ TABLES: dict[str, dict[str, str | None]] = {
         "account": "_synced_at",
         "opportunity": "_synced_at",
         "renewal": None,
+        "opportunity_note": None,
     },
     "product_ops": {
         "ticket": "created_at",
+        "ticket_message": "created_at",
         "deploy_event": "deployed_at",
         "incident": "started_at",
+        "news_item": "published_at",
     },
 }
 
