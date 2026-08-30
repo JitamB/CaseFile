@@ -8,14 +8,20 @@ version = "0.1.0"
 description = "An automatic investigator for business numbers."
 requires-python = ">=3.11"
 
-# Deliberately minimal. CI installs `.[dev]` on every push and every PR, and
-# sentence-transformers alone pulls ~2 GB of torch — putting the §18 stack here
-# would cost several minutes a run. Each track adds its own extra below when its
-# ladder step needs it, and CI keeps installing only `dev`.
+# Kept as small as the ladder allows. CI installs `.[dev]`, which installs these
+# too, so anything here is paid for on every push and every PR. The rule is that
+# a library lands here only when a step's verify command needs it to run in CI.
+#
+# statsmodels and scipy arrive at ladder step 1.1: §15 S1's materiality gate is
+# STL then robust-z, and its tests are the step's verify command. They cost about
+# 50 MB and a few seconds. sentence-transformers stays out — ~2 GB of torch for a
+# ranking job over ~900 documents, behind the `embed` extra CI does not install.
 dependencies = [
   "pydantic>=2.7",
   "pyyaml>=6.0",
   "duckdb>=1.0",
+  "scipy>=1.11",
+  "statsmodels>=0.14",
 ]
 
 [project.optional-dependencies]
@@ -41,6 +47,14 @@ python_version = "3.11"
 disallow_untyped_defs = true
 warn_unused_ignores = true
 plugins = ["pydantic.mypy"]
+
+# statsmodels ships no py.typed marker, so mypy cannot see into it. The choice
+# is between this and an inline ignore on every import; a named override says
+# "this library is untyped upstream" once, where an inline ignore reads as "this
+# line is a problem" at each call site.
+[[tool.mypy.overrides]]
+module = ["statsmodels.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
