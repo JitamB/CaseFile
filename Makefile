@@ -10,9 +10,11 @@ setup:
 	pip install -e ".[dev]"
 
 # Deterministic by construction: same seed, same bytes. The manifest of sha256
-# digests it writes is what ladder step 0.7 is verified against.
+# digests it writes is what ladder step 0.7 is verified against. The loader then
+# conforms the three sources into DuckDB and records a watermark for each.
 data:
 	python -m casefile.data.generator
+	python -m casefile.data.loader
 
 # Not yet implemented. These fail loudly rather than succeeding vacuously — a
 # target that prints nothing and exits 0 reads as "it worked".
@@ -25,7 +27,12 @@ demo:
 test:
 	pytest -q
 
+# In ci.yml's order. The two tools/ checks were missing here, which is how a
+# ground-truth violation reached CI at ladder step 0.7 with `make check` green —
+# precisely the divergence §41.3 says outranks every other task.
 check:
+	python tools/check_ground_truth_isolation.py
+	python tools/check_links.py
 	ruff check src tests
 	mypy src
 	pytest -q
