@@ -31,6 +31,10 @@ from casefile.models import KPIContract
 # (dedupe, currency norm)"). Anything without a dot is commentary.
 _QUALIFIED = re.compile(r"\b[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*\b")
 
+# src/casefile/contract.py → the repository root, to resolve a `probe_sql`
+# path the same way `engine/evidence.py` reads it.
+_ROOT = Path(__file__).resolve().parents[2]
+
 
 class ContractError(ValueError):
     def __init__(self, source: str, problems: list[str]) -> None:
@@ -77,6 +81,7 @@ def problems(contract: KPIContract) -> list[str]:
         *_unknown_roles(contract),
         *_unknown_lineage_tables(contract),
         *_driver_problems(contract),
+        *_missing_probe_files(contract),
         *_composition_problems(contract),
         *_epoch_problems(contract),
     ]
@@ -135,6 +140,17 @@ def _driver_problems(contract: KPIContract) -> list[str]:
             duplicates.append(f"drivers: {driver.id!r} appears more than once")
         seen.add(driver.id)
     return duplicates
+
+
+def _missing_probe_files(contract: KPIContract) -> list[str]:
+    """A `probe_sql` naming a file that does not exist would fail Stage 4a at
+    case time, on whichever KPI happens to trigger first — the same class of
+    problem A1 already catches for `lineage`, just one stage later."""
+    return [
+        f"drivers.{driver.id}.probe_sql names {driver.probe_sql!r}, which does not exist"
+        for driver in contract.drivers
+        if driver.probe_sql is not None and not (_ROOT / driver.probe_sql).exists()
+    ]
 
 
 def _composition_problems(contract: KPIContract) -> list[str]:

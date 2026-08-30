@@ -238,13 +238,20 @@ def test_a_file_that_is_not_a_mapping_is_rejected(tmp_path: Path) -> None:
         load(path)
 
 
-# ── Not checked yet, on purpose ───────────────────────────────────────────────
+# ── probe_sql resolves — the ladder step 2.2 closed this gap ──────────────────
 
 
-def test_probe_sql_paths_are_not_yet_required_to_exist(contract: KPIContract) -> None:
-    """`probes/` stays empty until Track B's ladder step 2.2, so a
-    file-existence rule would fail on the only contract we have. This test is
-    the reminder that the gap is deliberate, and where it closes."""
+def test_the_specimens_probes_all_exist(contract: KPIContract) -> None:
     declared = [d.probe_sql for d in contract.drivers if d.probe_sql]
     assert declared, "the specimen declares probes"
-    assert not any((CONTRACTS.parent / p).exists() for p in declared)
+    assert not any(problems(contract))
+
+
+def test_a_probe_sql_naming_a_file_that_does_not_exist_is_rejected(
+    tmp_path: Path, raw: dict[str, Any]
+) -> None:
+    """Stage 4a would fail at case time on whichever KPI triggers first — the
+    same class of gap A1 already catches for `lineage`, one stage later."""
+    raw["drivers"][0]["probe_sql"] = "probes/does_not_exist.sql"
+    with pytest.raises(ContractError, match="does_not_exist.sql"):
+        load(write(tmp_path, raw))

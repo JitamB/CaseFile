@@ -82,6 +82,7 @@ drivers:
     type: internal_controllable
     evidence_sources: [incident, deploy_log]
     max_lag_days: 30
+    probe_sql: probes/incident_scan.sql
     lever: { action: fulfilment_escalation, owner_role: vp_ops, lag_days: 10, save_rate: [0.50, 0.80] }
 
 # [5] LINEAGE
