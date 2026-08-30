@@ -42,6 +42,8 @@ from casefile.data.scm import (
     REFUND_AMOUNT,
     REFUND_MONTH,
     REFUND_REASON,
+    SCENARIO_B_DEAL_VALUE,
+    SCENARIO_B_ONSET,
     SPAN_END,
     SPAN_START,
     Account,
@@ -54,6 +56,9 @@ from casefile.data.scm import (
 
 SERVICES = ("sync-gateway", "billing-core", "insight-api", "edge-router")
 SEVERITIES = ("sev1", "sev2", "sev3")
+#: §25 B's injected rows, distinguishable from an organic "OPP-" id so
+#: `_opportunity_notes` can skip drawing notes for them.
+SCENARIO_B_ID_PREFIX = "OPPB-"
 
 #: Usage lines on top of the recurring subscription. §23's PVM needs price *and*
 #: volume to move, which a pure subscription line cannot supply on its own.
@@ -414,6 +419,59 @@ def _opportunities(world: World, rng: random.Random) -> list[list[Any]]:
                 f"U-{rng.randint(100, 199)}", _synced(close, rng),
             ])
 
+    # §25 B: one explicit deal a month, per footprint account — won until the
+    # competitor arrives, lost with no reason recorded after. Injected
+    # outright rather than nudging the trickle above, the same way scenario
+    # D's refund batch is its own row rather than a thumb on an ordinary one.
+    #
+    # Its own stream, not the shared `rng` above. Drawing from the shared
+    # stream here shifts every rng call after it in generation order —
+    # `_credit_notes`' ordinary trickle among them, which moved East's
+    # already-measured April figures with no causal link between the two at
+    # all. This is the exact failure `World.stream()` exists to prevent for
+    # `scm.py`'s draws; `generator.py`'s rendering stream needed the same
+    # discipline once a second consumer was added to it.
+    b_rng = random.Random(f"{world.seed}:scenario_b")
+    for index, account in enumerate(world.scenario_b_accounts()):
+        # Half the accounts lose their deal at the onset, half a month later
+        # — two consecutive periods each down by roughly half, rather than
+        # one cliff STL's trend catches up with by the second period.
+        account_onset = (
+            SCENARIO_B_ONSET if index % 2 == 0 else _add_month(SCENARIO_B_ONSET)
+        )
+        for month in month_range(max(SPAN_START, account.first_contract_date), SPAN_END):
+            counter += 1
+            created = _safe_month_day(month, 3)
+            close = _safe_month_day(month, 24)  # same month as `created` — never spills over
+            if close > SPAN_END:
+                continue
+            # `new_business_arr` groups by close_date, so won/lost has to key
+            # off it too — keying off `month` let one deal's actual close
+            # date drift a month past its onset side, contaminating the
+            # first post-onset period with a win that should have counted
+            # against the last pre-onset one.
+            won = close < account_onset
+            rows.append([
+                f"{SCENARIO_B_ID_PREFIX}{counter:06d}", account.account_id, "new",
+                "closed_won" if won else "closed_lost",
+                f"{SCENARIO_B_DEAL_VALUE:.2f}", created.isoformat(), close.isoformat(),
+                int(won), "", f"U-{b_rng.randint(100, 199)}", _synced(close, b_rng),
+            ])
+            if not won:
+                # The account keeps buying something — just not the deal the
+                # competitor took. A smaller, ordinary, *won* line alongside
+                # the lost one, so a post-onset month is still several
+                # distinct records rather than one record standing for the
+                # whole movement (§15 S1's artefact check, correctly, would
+                # otherwise refuse this the same way it refuses scenario D).
+                counter += 1
+                rows.append([
+                    f"{SCENARIO_B_ID_PREFIX}{counter:06d}", account.account_id, "new",
+                    "closed_won", f"{SCENARIO_B_DEAL_VALUE * 0.18:.2f}",
+                    created.isoformat(), close.isoformat(), 1, "",
+                    f"U-{b_rng.randint(100, 199)}", _synced(close, b_rng),
+                ])
+
     rows.sort(key=lambda r: (str(r[6]), str(r[0])))
     return rows
 
@@ -545,6 +603,13 @@ def _opportunity_notes(
     by_account: dict[str, list[list[Any]]] = {}
     for opportunity in opportunities:
         by_account.setdefault(str(opportunity[1]), []).append(opportunity)
+        # §25 B's injected rows carry a distinct id and draw no notes here —
+        # they have their own stream (generator.py) precisely so a change to
+        # how many of them exist cannot shift this loop's draw count for
+        # every *organic* row that follows, which is what moved scenario A's
+        # already-measured figures before this guard existed.
+        if str(opportunity[0]).startswith(SCENARIO_B_ID_PREFIX):
+            continue
         for _ in range(rng.randint(2, 6)):
             closed = date.fromisoformat(str(opportunity[6]))
             when = closed - timedelta(days=rng.randint(0, 55))
@@ -692,6 +757,10 @@ def _month_end(month: date) -> date:
 
 def _safe_month_day(month: date, day: int) -> date:
     return date(month.year, month.month, min(day, 28))
+
+
+def _add_month(day: date) -> date:
+    return date(day.year + day.month // 12, day.month % 12 + 1, day.day)
 
 
 def main() -> None:

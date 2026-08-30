@@ -36,6 +36,7 @@ changes.
 
 from __future__ import annotations
 
+import re
 import statistics
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -58,6 +59,11 @@ from casefile.stats.materiality import assess
 HISTORY_PERIODS = 36
 #: How far back the peer-borrowed baseline and the artefact check look.
 TRAILING_PERIODS = 3
+
+#: Which table a contract filter predicate names — mirrors metric.py's own
+#: matcher, so "this filter belongs to this term" means the same thing in
+#: both places.
+_QUALIFIED = re.compile(r"\b([a-z_][a-z0-9_]*)\.([a-z_][a-z0-9_]*)\b")
 
 
 class VerifyError(ValueError):
@@ -520,7 +526,7 @@ def _largest_record(
     """The biggest single row contributing to the period, across every term."""
     best, name = 0.0, "none"
     for term in (*parse(contract.formula).numerator, *parse(contract.formula).denominator):
-        joins, where, params = _scope(con, term.table, dimensions, start, end)
+        joins, where, params = _scope(con, contract, term.table, dimensions, start, end)
         row = con.execute(
             f"SELECT max(abs({term.expression})) FROM {term.qualified} AS {term.table}"
             f"{joins} WHERE {where}",
@@ -545,7 +551,7 @@ def _slippage(
         ingest = _ingest_column(con, term.table)
         if ingest is None:
             continue
-        joins, where, params = _scope(con, term.table, dimensions, start, end)
+        joins, where, params = _scope(con, contract, term.table, dimensions, start, end)
         row = con.execute(
             f"SELECT coalesce(sum(abs({term.expression})), 0) "
             f"FROM {term.qualified} AS {term.table}{joins} "
@@ -560,12 +566,22 @@ def _slippage(
 
 def _scope(
     con: duckdb.DuckDBPyConnection,
+    contract: KPIContract,
     table: str,
     dimensions: dict[str, str],
     start: date,
     end: date,
 ) -> tuple[str, str, list[object]]:
-    """The period-and-dimension predicate a term's own query would use."""
+    """The period, dimension *and contract-filter* predicate a term's own
+    query would use.
+
+    Missing the filters is not a smaller version of the same scope — it is a
+    different table. `new_business_arr`'s formula reads `crm.opportunity`
+    filtered to `type = 'new'`, and that one table also carries renewals and
+    expansions; without the filter, a single multi-crore renewal row reads as
+    "one record is 1400% of new_business_arr's movement," refusing a real
+    case over a row the metric never sums in the first place.
+    """
     joins = ""
     where = [f"{table}.{PERIOD_COLUMN[table]}::DATE BETWEEN ? AND ?"]
     params: list[object] = [start, end]
@@ -581,6 +597,12 @@ def _scope(
             joins = " JOIN crm.account AS account USING (account_id)"
             where.append(f"account.{dimension} = ?")
         params.append(wanted)
+
+    for predicate in contract.filters:
+        owners = {t for t, _ in _QUALIFIED.findall(predicate)}
+        if table in owners:
+            where.append(f"({predicate})")
+
     return joins, " AND ".join(where), params
 
 
