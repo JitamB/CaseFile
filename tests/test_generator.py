@@ -1,0 +1,400 @@
+"""Ladder step 0.7 — the generator, and scenario A on disk.
+
+The step's verify command from §44:
+
+    "make data twice → byte-identical; the East -8% is visible in the tables"
+
+Both halves are here. Everything else defends a property some later gate needs:
+if the ticket spike is not in the data, 2.4's Timing test has nothing to find;
+if the pricing decoy touched two accounts instead of 41, Locality cannot refute
+it; if the lost-reason fields are empty rather than populated-and-innocent,
+§25's checked-absent / uncheckable distinction has nothing behind it.
+
+These assert **shape**, never the fixture's hand-written rupees. The fixtures are
+the §10 story; the generator is a causal model, and the two are allowed to
+disagree on the last digit.
+"""
+
+from __future__ import annotations
+
+import csv
+import json
+from collections import Counter, defaultdict
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from casefile.contract import load
+from casefile.data.generator import generate
+from casefile.data.scm import (
+    AS_OF,
+    COMPETITOR_LOST_REASONS,
+    COMPETITOR_ONSET,
+    COMPETITOR_REGION,
+    INTEGRATION_ONSET,
+    N_ENTERPRISE,
+    OPS_START,
+    SPAN_END,
+    SPAN_START,
+    TREATED,
+)
+
+ROOT = Path(__file__).resolve().parents[1]
+
+pytestmark = pytest.mark.gate0
+
+
+@pytest.fixture(scope="module")
+def data(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    out = tmp_path_factory.mktemp("data")
+    generate(out)
+    return out
+
+
+def rows(data: Path, name: str) -> list[dict[str, str]]:
+    with (data / "raw" / name).open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def truth(data: Path) -> dict[str, Any]:
+    return json.loads((data / "ground_truth.json").read_text(encoding="utf-8"))
+
+
+def east_by_month(data: Path) -> tuple[Counter[str], defaultdict[str, Counter[str]]]:
+    total: Counter[str] = Counter()
+    by_account: defaultdict[str, Counter[str]] = defaultdict(Counter)
+    for line in rows(data, "billing/invoice_line.csv"):
+        if line["region"] != "East":
+            continue
+        month = line["invoice_date"][:7]
+        total[month] += float(line["amount_net"])
+        by_account[month][line["account_id"]] += float(line["amount_net"])
+    return total, by_account
+
+
+# ── make data twice → byte-identical ──────────────────────────────────────────
+
+
+def test_two_runs_produce_identical_bytes(tmp_path: Path) -> None:
+    """The ladder's first verify. Every later gate runs against this data, so a
+    generator that drifts between runs makes every one of them unfalsifiable."""
+    first = generate(tmp_path / "one")
+    second = generate(tmp_path / "two")
+
+    assert first == second
+    assert len(first) == 11, "ten tables and the sealed answer sheet"
+
+
+def test_the_manifest_covers_every_file_that_was_written(data: Path) -> None:
+    manifest = json.loads((data / "manifest.json").read_text(encoding="utf-8"))
+    written = {
+        str(p.relative_to(data))
+        for p in data.rglob("*")
+        if p.is_file() and p.name != "manifest.json"
+    }
+    assert set(manifest) == written
+
+
+def test_nothing_in_the_corpus_was_stamped_with_the_wall_clock(data: Path) -> None:
+    """`AS_OF` is the simulated present. If any timestamp came from the real
+    clock, a recorded demo would start reporting stale data tomorrow."""
+    latest = max(line["_ingested_at"] for line in rows(data, "billing/invoice.csv"))
+    assert datetime.fromisoformat(latest) <= AS_OF
+
+
+# ── The East −8% is visible in the tables ─────────────────────────────────────
+
+
+def test_the_east_decline_is_visible_and_is_about_eight_percent(data: Path) -> None:
+    """The ladder's second verify. Tolerance is half a point — the figure is a
+    consequence of the model, not a constant someone typed in."""
+    total, _ = east_by_month(data)
+    march, april = total["2026-03"], total["2026-04"]
+    relative = (april - march) / march
+
+    assert relative == pytest.approx(-0.08, abs=0.005), f"East moved {relative:+.4f}"
+    assert april < march
+
+
+def test_the_movement_concentrates_in_the_two_treated_accounts(data: Path) -> None:
+    """§35.2's gate: K(2) >= 0.85. Below that, Stage 2 has not actually narrowed
+    anything and there is no footprint to scope retrieval to."""
+    _, by_account = east_by_month(data)
+    deltas = {
+        account: by_account["2026-04"][account] - by_account["2026-03"][account]
+        for account in set(by_account["2026-03"]) | set(by_account["2026-04"])
+    }
+    ranked = sorted(deltas.items(), key=lambda kv: abs(kv[1]), reverse=True)
+    total = sum(abs(v) for v in deltas.values())
+
+    assert sum(abs(v) for _, v in ranked[:2]) / total >= 0.85
+
+    names = {a["account_id"]: a["account_name"] for a in rows(data, "crm/account.csv")}
+    top_two = {names[f"ACC-{account[1:]}"] for account, _ in ranked[:2]}
+    assert top_two == set(TREATED)
+
+
+def test_the_tail_is_not_empty(data: Path) -> None:
+    """Some ordinary variation has to survive, or Stage 2 is deciding between a
+    signal and a vacuum and the demonstration proves nothing."""
+    _, by_account = east_by_month(data)
+    deltas = {
+        account: by_account["2026-04"][account] - by_account["2026-03"][account]
+        for account in set(by_account["2026-03"]) | set(by_account["2026-04"])
+    }
+    ranked = sorted(deltas.items(), key=lambda kv: abs(kv[1]), reverse=True)
+    total = sum(abs(v) for v in deltas.values())
+
+    assert sum(abs(v) for _, v in ranked[2:]) / total >= 0.02
+
+
+# ── The causal chain is on disk, not merely asserted ──────────────────────────
+
+
+def test_tickets_spike_on_the_treated_accounts_at_the_onset(data: Path) -> None:
+    names = {a["account_id"]: a["account_name"] for a in rows(data, "crm/account.csv")}
+    before: Counter[str] = Counter()
+    after: Counter[str] = Counter()
+    for ticket in rows(data, "product_ops/ticket.csv"):
+        when = date.fromisoformat(ticket["created_at"][:10])
+        bucket = after if when >= INTEGRATION_ONSET else before
+        bucket[names[ticket["account_id"]]] += 1
+
+    days_before = (INTEGRATION_ONSET - OPS_START).days
+    days_after = (SPAN_END - INTEGRATION_ONSET).days + 1
+
+    for name in TREATED:
+        ratio = (after[name] / days_after) / (before[name] / days_before)
+        assert ratio >= 3.0, f"{name} ticket rate rose only {ratio:.2f}x"
+
+
+def test_untreated_accounts_show_no_ticket_spike(data: Path) -> None:
+    """Without this the Locality test at 2.4 would have nothing to separate: a
+    cause that shows up everywhere is not local to anything."""
+    names = {a["account_id"]: a["account_name"] for a in rows(data, "crm/account.csv")}
+    before: Counter[str] = Counter()
+    after: Counter[str] = Counter()
+    for ticket in rows(data, "product_ops/ticket.csv"):
+        name = names[ticket["account_id"]]
+        if name in TREATED:
+            continue
+        when = date.fromisoformat(ticket["created_at"][:10])
+        (after if when >= INTEGRATION_ONSET else before)[name] += 1
+
+    days_before = (INTEGRATION_ONSET - OPS_START).days
+    days_after = (SPAN_END - INTEGRATION_ONSET).days + 1
+    overall = (sum(after.values()) / days_after) / (sum(before.values()) / days_before)
+    assert 0.85 <= overall <= 1.15, f"untreated ticket rate moved {overall:.2f}x"
+
+
+def test_both_renewals_fall_inside_the_contract_maximum_lag(data: Path) -> None:
+    """§10: the onset precedes each renewal decision by 21 and 23 days, inside
+    `max_lag_days: 45`. Timing can only pass at 2.4 if that is true on disk."""
+    contract = load(ROOT / "contracts" / "net_revenue.yaml")
+    max_lag = next(d for d in contract.drivers if d.id == "integration_delay").max_lag_days
+    names = {a["account_id"]: a["account_name"] for a in rows(data, "crm/account.csv")}
+
+    lags = {
+        names[r["account_id"]]: (date.fromisoformat(r["closed_date"]) - INTEGRATION_ONSET).days
+        for r in rows(data, "crm/renewal.csv")
+        if names[r["account_id"]] in TREATED and r["closed_date"].startswith("2026")
+    }
+    assert set(lags) == set(TREATED)
+    for name, lag in lags.items():
+        assert 0 < lag <= max_lag, f"{name} renewed {lag} days after onset"
+
+
+def test_the_treated_accounts_failed_their_renewal(data: Path) -> None:
+    names = {a["account_id"]: a["account_name"] for a in rows(data, "crm/account.csv")}
+    outcomes = {
+        names[r["account_id"]]: r["outcome"]
+        for r in rows(data, "crm/renewal.csv")
+        if names[r["account_id"]] in TREATED and r["closed_date"].startswith("2026")
+    }
+    assert set(outcomes.values()) <= {"churned", "downgraded"}
+
+
+# ── The decoys are plausible, and each fails exactly one test ─────────────────
+
+
+def test_the_price_rise_hit_every_enterprise_account(data: Path) -> None:
+    """§24: it hit 41 accounts where the effect hit two. That ratio *is* the
+    Locality refutation — a cause with a wider footprint than its effect."""
+    book = rows(data, "billing/price_book.csv")
+    stepped = {
+        (r["product_id"], r["segment"])
+        for r in book
+        if r["effective_from"] == "2026-03-01" and r["segment"] == "enterprise"
+    }
+    assert len(stepped) == 6, "every product's enterprise price steps up"
+
+    enterprise = [a for a in rows(data, "crm/account.csv") if a["segment"] == "enterprise"]
+    assert len(enterprise) == N_ENTERPRISE
+
+
+def test_the_competitor_promotion_is_apac_only_and_starts_after_the_decline(
+    data: Path,
+) -> None:
+    """It fails Locality *and* Timing — §24's second decoy."""
+    assert COMPETITOR_ONSET > INTEGRATION_ONSET
+
+    regions = {a["account_id"]: a["region"] for a in rows(data, "crm/account.csv")}
+    flagged = [
+        opportunity
+        for opportunity in rows(data, "crm/opportunity.csv")
+        if opportunity["lost_reason_code"] in COMPETITOR_LOST_REASONS
+    ]
+    assert flagged, "the competitor decoy has to be findable somewhere"
+    assert {regions[o["account_id"]] for o in flagged} == {COMPETITOR_REGION}
+    for opportunity in flagged:
+        assert date.fromisoformat(opportunity["close_date"]) >= COMPETITOR_ONSET
+
+
+def test_the_east_lost_reasons_are_populated_and_name_no_competitor(data: Path) -> None:
+    """ev-006, the counted absence: "0 of 12 populated lost-reason fields on the
+    footprint accounts and their peers name a competitor".
+
+    §25 rests on this. In scenario A the fields are *populated* and innocent —
+    checked-absent, which refutes. In scenario B they are null and the sources
+    have no coverage — uncheckable, which abstains. The difference has to exist
+    in the data before any probe can report it.
+    """
+    east = {a["account_id"] for a in rows(data, "crm/account.csv") if a["region"] == "East"}
+    window = [
+        o
+        for o in rows(data, "crm/opportunity.csv")
+        if o["account_id"] in east
+        and o["closed_won"] == "0"
+        and "2026-03-01" <= o["close_date"] <= "2026-04-30"
+    ]
+    populated = [o for o in window if o["lost_reason_code"]]
+
+    assert len(populated) >= 12, f"only {len(populated)} populated lost reasons in East"
+    assert len(populated) == len(window), "a lost East opportunity always states why"
+    assert not [o for o in populated if o["lost_reason_code"] in COMPETITOR_LOST_REASONS]
+
+
+# ── The sealed answer sheet ───────────────────────────────────────────────────
+
+
+def test_the_answer_sheet_agrees_with_the_contract(data: Path) -> None:
+    """The reason 0.6 comes before 0.7. A ground truth naming a driver the
+    registry does not enumerate would make scenario A unrecoverable by
+    construction, and the harness would be measuring nothing."""
+    contract = load(ROOT / "contracts" / "net_revenue.yaml")
+    known = {d.id for d in contract.drivers}
+    sealed = truth(data)
+
+    assert sealed["true_driver"] in known
+    assert {event["driver_id"] for event in sealed["events"]} <= known
+
+
+def test_the_answer_sheet_records_the_verdict_the_scenario_forces(data: Path) -> None:
+    sealed = truth(data)
+    assert sealed["scenario"] == "A"
+    assert sealed["expected_verdict"] == "likely"
+    assert len(sealed["footprint_accounts"]) == 2
+    assert sealed["footprint_account_names"] == list(TREATED)
+
+
+# ── §22's volumes and cadences ────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "table,low,high",
+    [
+        ("billing/invoice_line.csv", 150_000, 220_000),
+        ("crm/opportunity.csv", 1_800, 3_000),
+        ("product_ops/ticket.csv", 38_000, 52_000),
+        ("product_ops/deploy_event.csv", 600, 1_000),
+        ("crm/account.csv", 120, 120),
+    ],
+)
+def test_volumes_land_in_the_ranges_22_states(
+    data: Path, table: str, low: int, high: int
+) -> None:
+    assert low <= len(rows(data, table)) <= high
+
+
+def test_product_ops_carries_eight_months_where_billing_carries_thirty_six(
+    data: Path,
+) -> None:
+    """§22's short product_ops history is what makes scenario C honest at 1.3 —
+    a sparse baseline the system has to notice, not a flag someone sets."""
+    tickets = [
+        date.fromisoformat(t["created_at"][:10]) for t in rows(data, "product_ops/ticket.csv")
+    ]
+    invoices = [date.fromisoformat(i["invoice_date"]) for i in rows(data, "billing/invoice.csv")]
+
+    assert min(tickets) >= OPS_START
+    assert min(invoices) <= SPAN_START.replace(day=28)
+    assert (max(invoices) - min(invoices)).days > 1000
+    assert (max(tickets) - min(tickets)).days < 260
+
+
+def test_billing_and_crm_disagree_about_account_identity(data: Path) -> None:
+    """Conformance is Stage 0's job and 0.8's alias map is what does it. If the
+    two sources already agreed, that test would pass on nothing."""
+    crm = {a["account_id"] for a in rows(data, "crm/account.csv")}
+    billing = {line["account_id"] for line in rows(data, "billing/invoice_line.csv")}
+
+    assert billing.isdisjoint(crm)
+    assert len(billing) == len(crm)
+
+
+def test_ticket_bodies_are_empty_until_step_1_5(data: Path) -> None:
+    """The rows exist so the SCM's counts are real now; 1.5 fills text into
+    them, so counts and documents can never disagree."""
+    tickets = rows(data, "product_ops/ticket.csv")
+    assert all(t["body_text"] == "" for t in tickets)
+    assert all(t["subject"] for t in tickets)
+
+
+def test_the_price_rise_measurably_cooled_enterprise_upsell(data: Path) -> None:
+    """The decoy has to have a *real* effect, or it is not a decoy.
+
+    §35.2 requires `pricing_change` to survive adjudication as **minor**, with a
+    share of 0.05-0.12 — which is impossible if the price rise moved nothing at
+    all. What it moved is appetite: enterprise accounts kept renewing but
+    stopped buying more. Measured here as a difference-in-differences against
+    the segments the rise did not touch, so ordinary drift cannot account for it.
+    """
+    accounts = {a["account_id"]: a for a in rows(data, "crm/account.csv")}
+    won: defaultdict[tuple[str, str], list[int]] = defaultdict(list)
+    for opportunity in rows(data, "crm/opportunity.csv"):
+        account = accounts[opportunity["account_id"]]
+        if opportunity["type"] != "expansion" or account["region"] == COMPETITOR_REGION:
+            continue  # APAC carries the other decoy; keep the two apart
+        era = "after" if opportunity["close_date"] >= "2026-03-01" else "before"
+        segment = "enterprise" if account["segment"] == "enterprise" else "other"
+        won[(segment, era)].append(int(opportunity["closed_won"]))
+
+    def rate(segment: str, era: str) -> float:
+        outcomes = won[(segment, era)]
+        assert len(outcomes) >= 30, f"too few {segment} expansions {era} to conclude anything"
+        return sum(outcomes) / len(outcomes)
+
+    exposed = rate("enterprise", "after") - rate("enterprise", "before")
+    control = rate("other", "after") - rate("other", "before")
+    assert exposed - control <= -0.15, "the price rise left no trace on upsell"
+
+
+def test_thirty_nine_of_the_forty_one_held_steady(data: Path) -> None:
+    """§24, verbatim: the price rise "hit all 41 enterprise accounts; 39 of them
+    held steady". That ratio is the whole Locality refutation — and it only
+    holds if the rise affected appetite rather than retention."""
+    accounts = {a["account_id"]: a for a in rows(data, "crm/account.csv")}
+    enterprise = {i for i, a in accounts.items() if a["segment"] == "enterprise"}
+
+    exposed = [
+        r
+        for r in rows(data, "crm/renewal.csv")
+        if r["account_id"] in enterprise and r["closed_date"] >= "2026-03-01"
+    ]
+    failed = {r["account_id"] for r in exposed if r["outcome"] != "renewed"}
+    treated = {
+        i for i, a in accounts.items() if a["account_name"] in TREATED
+    }
+    assert failed <= treated, "an unexposed enterprise account broke the decoy's story"
