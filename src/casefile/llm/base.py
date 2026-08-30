@@ -62,7 +62,8 @@ class CacheMiss(LookupError):
         super().__init__(
             f"no recorded response at {path}\n"
             f"  key: {key}\n"
-            "  Replay is on and there is no live provider to record from. Either the "
-            "prompt or the schema changed since this entry was recorded — re-record it "
-            "with a live provider (ladder step 1.5) and commit the result."
+            "  Replay is on and this call was not given a live provider to record from. "
+            "Either the prompt or the schema changed since this entry was recorded — "
+            "re-record it with CASEFILE_LLM_REPLAY=false and ANTHROPIC_API_KEY set, "
+            "and commit the result."
         )

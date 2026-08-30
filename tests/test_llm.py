@@ -18,6 +18,7 @@ from pydantic import BaseModel, create_model
 
 from casefile.llm import (
     DEFAULT_CACHE_DIR,
+    AnthropicProvider,
     CacheMiss,
     Prompt,
     ReplayProvider,
@@ -83,7 +84,8 @@ def test_an_unsupported_annotation_raises_rather_than_guesses() -> None:
 
 
 class _Recorder:
-    """Stands in for the live provider that arrives at 1.5. Returns a
+    """Stands in for a live provider, without depending on `AnthropicProvider`
+    directly — this test only needs *some* `inner` to record from. Returns a
     distinctive `Usage` so that "replay returns the *recorded* figures" is
     something a test can actually see."""
 
@@ -217,12 +219,19 @@ def test_replay_is_the_default_when_the_variable_is_unset(
     assert provider.cache_dir == DEFAULT_CACHE_DIR
 
 
-def test_turning_replay_off_fails_loudly_until_step_1_5(
+def test_turning_replay_off_selects_the_live_provider(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The first real prompt (S3) landed the live provider — `provider_from_env`
+    is the one place that decision is wired in, matching §18's "provider is a
+    one-file swap"."""
     monkeypatch.setenv("CASEFILE_LLM_REPLAY", "false")
-    with pytest.raises(NotImplementedError, match="ladder step 1.5"):
-        provider_from_env()
+    monkeypatch.delenv("CASEFILE_MODEL", raising=False)
+
+    provider = provider_from_env()
+
+    assert isinstance(provider, AnthropicProvider)
+    assert provider.model_class == "sonnet"  # D-2: the demo path's default tier
 
 
 def test_the_committed_cache_lives_at_the_repository_root() -> None:
