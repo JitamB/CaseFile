@@ -18,7 +18,7 @@ calendar: fiscal_445
 # [2] CALCULATION
 formula: SUM(invoice_line.amount_net) - SUM(credit_note.amount)
 filters:
-  - invoice_line.account_id NOT IN (SELECT account_id FROM account WHERE is_test)
+  - invoice_line.account_id NOT IN (SELECT account_id FROM crm.account WHERE is_test)
   - invoice_line.currency = 'INR'
 refresh: { source: billing, cadence: daily, sla_hours: 26 }
 
