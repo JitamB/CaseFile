@@ -11,9 +11,15 @@ decomposition whose parts do not sum to the whole would quietly forfeit it —
 so `split` returns the residual it did not explain and the caller can assert it
 is zero.
 
-Items present in only one period land entirely in **mix**, which is the standard
-treatment and the honest one: a product that did not exist last month has no
-price change and no volume change, it has a change of assortment.
+**An item present in only one period keeps its price on the side it is missing
+from.** Without that, a customer who left reads as a price cut to zero: the
+absent side contributes `p = 0`, and the loss smears across all three terms as
+`price −pq`, `volume −pq`, `mix +pq`. Those sum correctly and mean nothing. A
+churned account did not renegotiate, it stopped buying — that is volume, and §10
+agrees, putting the two stalled renewals there and leaving mix at −₹0.1 Cr.
+
+Carrying the price across also leaves **mix** with its textbook meaning: the
+interaction term over items whose price *and* quantity both moved.
 """
 
 from __future__ import annotations
@@ -48,6 +54,12 @@ def split(before: Basket, after: Basket) -> PVMSplit:
     for key in sorted(set(before) | set(after)):
         q0, p0 = before.get(key, (0.0, 0.0))
         q1, p1 = after.get(key, (0.0, 0.0))
+        # An absent side has no price of its own; borrow the one it had, or will
+        # have, so that appearing and vanishing are quantity changes.
+        if key not in before:
+            p0 = p1
+        if key not in after:
+            p1 = p0
         price += (p1 - p0) * q0
         volume += p0 * (q1 - q0)
         mix += (p1 - p0) * (q1 - q0)

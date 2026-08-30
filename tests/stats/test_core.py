@@ -150,15 +150,27 @@ def test_the_three_parts_sum_to_the_whole_on_a_mixed_basket() -> None:
     assert result.residual == pytest.approx(0.0, abs=1e-9)
 
 
-def test_a_new_item_is_assortment_not_price_or_volume() -> None:
-    """It has no previous price to have changed and no previous quantity to have
-    grown. Putting it in volume would report a price-flat launch as organic
-    growth of an item that did not exist."""
+def test_an_item_that_vanishes_is_a_volume_loss_not_a_price_cut() -> None:
+    """The one that matters for §25 A. An account that churned did not
+    renegotiate its price to zero — it stopped buying.
+
+    Reading the absent side as `p = 0` sums correctly and means nothing: the loss
+    smears as price −pq, volume −pq, mix +pq. §10 puts the two stalled renewals
+    in volume, and so does this.
+    """
+    result = split({"ACME": (100.0, 13.0)}, {})
+
+    assert result.total_delta == pytest.approx(-1300.0)
+    assert result.pvm.volume == pytest.approx(-1300.0)
+    assert result.pvm.price == 0.0
+    assert result.pvm.mix == 0.0
+
+
+def test_an_item_that_appears_is_a_volume_gain_by_the_same_argument() -> None:
     result = split({}, {"new": (4.0, 25.0)})
 
-    assert result.pvm.price == 0.0
-    assert result.pvm.volume == 0.0
-    assert result.pvm.mix == pytest.approx(100.0)
+    assert result.pvm.volume == pytest.approx(100.0)
+    assert (result.pvm.price, result.pvm.mix) == (0.0, 0.0)
 
 
 def test_a_pure_price_rise_lands_entirely_in_price() -> None:
