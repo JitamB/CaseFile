@@ -47,10 +47,9 @@ pytestmark = pytest.mark.gate0
 
 
 @pytest.fixture(scope="module")
-def data(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    out = tmp_path_factory.mktemp("data")
-    generate(out)
-    return out
+def data(generated: Path) -> Path:
+    """The session-wide corpus from `conftest.py` — built once, not per module."""
+    return generated
 
 
 def rows(data: Path, name: str) -> list[dict[str, str]]:
