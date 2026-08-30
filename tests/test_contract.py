@@ -63,7 +63,7 @@ def test_every_element_of_14_1_survived_the_round_trip(contract: KPIContract) ->
     assert contract.data_quality.max_single_record_share == 0.35
     assert contract.lineage.downstream == ["metric.nrr", "dashboard.exec_revenue"]
     assert contract.access.masking["amount_net"] == "band_1_5_cr"
-    assert len(contract.epochs) == 2
+    assert len(contract.epochs) == 3
     assert len(contract.composition) == 3
     assert contract.seasonal_period_days == 365
 

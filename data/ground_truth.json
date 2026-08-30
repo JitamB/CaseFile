@@ -1,90 +1,125 @@
 {
   "as_of": "2026-05-01T06:00:00",
-  "description": "Multi-factor movement \u2014 one true cause and two plausible decoys.",
-  "dimensions": {
-    "region": "East"
-  },
-  "events": [
-    {
-      "accounts": [
+  "scenarios": {
+    "A": {
+      "closes_at": "adjudicate",
+      "description": "Multi-factor movement \u2014 one true cause and two plausible decoys.",
+      "dimensions": {
+        "region": "East"
+      },
+      "events": [
+        {
+          "accounts": [
+            "ACC-0001",
+            "ACC-0002"
+          ],
+          "driver_id": "integration_delay",
+          "onset": "2026-03-12",
+          "role": "true_cause",
+          "ticket_multiplier": 4.2
+        },
+        {
+          "accounts": [
+            "ACC-0001",
+            "ACC-0002",
+            "ACC-0003",
+            "ACC-0004",
+            "ACC-0005",
+            "ACC-0006",
+            "ACC-0007",
+            "ACC-0008",
+            "ACC-0009",
+            "ACC-0010",
+            "ACC-0011",
+            "ACC-0012",
+            "ACC-0013",
+            "ACC-0014",
+            "ACC-0015",
+            "ACC-0016",
+            "ACC-0017",
+            "ACC-0050",
+            "ACC-0051",
+            "ACC-0052",
+            "ACC-0053",
+            "ACC-0054",
+            "ACC-0055",
+            "ACC-0056",
+            "ACC-0057",
+            "ACC-0058",
+            "ACC-0059",
+            "ACC-0080",
+            "ACC-0081",
+            "ACC-0082",
+            "ACC-0083",
+            "ACC-0084",
+            "ACC-0085",
+            "ACC-0086",
+            "ACC-0087",
+            "ACC-0088",
+            "ACC-0105",
+            "ACC-0106",
+            "ACC-0107",
+            "ACC-0108",
+            "ACC-0109"
+          ],
+          "driver_id": "pricing_change",
+          "killed_by": "locality",
+          "onset": "2026-03-01",
+          "role": "decoy",
+          "uplift": 0.06
+        },
+        {
+          "driver_id": "competitor_offer",
+          "killed_by": "locality_and_timing",
+          "onset": "2026-04-20",
+          "region": "APAC",
+          "role": "decoy"
+        }
+      ],
+      "expected_verdict": "likely",
+      "expected_verdict_reason": "n = 2 treated accounts, below the n >= 5 minimum for the dose test, so Confirmed is unreachable by construction",
+      "footprint_account_names": [
+        "ACME",
+        "NORTHWIND"
+      ],
+      "footprint_accounts": [
         "ACC-0001",
         "ACC-0002"
       ],
-      "driver_id": "integration_delay",
-      "onset": "2026-03-12",
-      "role": "true_cause",
-      "ticket_multiplier": 4.2
+      "kpi": "net_revenue",
+      "period": "2026-04",
+      "scenario": "A",
+      "true_driver": "integration_delay"
     },
-    {
-      "accounts": [
-        "ACC-0001",
-        "ACC-0002",
-        "ACC-0003",
-        "ACC-0004",
-        "ACC-0005",
-        "ACC-0006",
-        "ACC-0007",
-        "ACC-0008",
-        "ACC-0009",
-        "ACC-0010",
-        "ACC-0011",
-        "ACC-0012",
-        "ACC-0013",
-        "ACC-0014",
-        "ACC-0015",
-        "ACC-0016",
-        "ACC-0017",
-        "ACC-0050",
-        "ACC-0051",
-        "ACC-0052",
-        "ACC-0053",
-        "ACC-0054",
-        "ACC-0055",
-        "ACC-0056",
-        "ACC-0057",
-        "ACC-0058",
-        "ACC-0059",
-        "ACC-0080",
-        "ACC-0081",
-        "ACC-0082",
-        "ACC-0083",
-        "ACC-0084",
-        "ACC-0085",
-        "ACC-0086",
-        "ACC-0087",
-        "ACC-0088",
-        "ACC-0105",
-        "ACC-0106",
-        "ACC-0107",
-        "ACC-0108",
-        "ACC-0109"
-      ],
-      "driver_id": "pricing_change",
-      "killed_by": "locality",
-      "onset": "2026-03-01",
-      "role": "decoy",
-      "uplift": 0.06
+    "D": {
+      "account": "ACC-0051",
+      "closes_at": "verify",
+      "credit_amount": 6700000.0,
+      "credit_id": "CN-REFUND-01",
+      "description": "Refund batch \u2014 a single credit note is most of the movement.",
+      "dimensions": {
+        "region": "West"
+      },
+      "expected_model_calls": 0,
+      "failing_check": "artefact",
+      "kpi": "net_revenue",
+      "period": "2026-03",
+      "scenario": "D",
+      "true_driver": null
     },
-    {
-      "driver_id": "competitor_offer",
-      "killed_by": "locality_and_timing",
-      "onset": "2026-04-20",
-      "region": "APAC",
-      "role": "decoy"
+    "E": {
+      "closes_at": "verify",
+      "description": "Definition drift \u2014 discounts dropped at an epoch boundary.",
+      "dimensions": {
+        "region": "North"
+      },
+      "epoch_boundary": "2026-02-01",
+      "expected_model_calls": 0,
+      "failing_check": "definition_drift",
+      "kpi": "net_revenue",
+      "period": "2026-02",
+      "scenario": "E",
+      "true_driver": null
     }
-  ],
-  "expected_verdict": "likely",
-  "expected_verdict_reason": "n = 2 treated accounts, below the n >= 5 minimum for the dose test, so Confirmed is unreachable by construction",
-  "footprint_account_names": [
-    "ACME",
-    "NORTHWIND"
-  ],
-  "footprint_accounts": [
-    "ACC-0001",
-    "ACC-0002"
-  ],
-  "kpi": "net_revenue",
-  "period": "2026-04",
-  "scenario": "A",
-  "true_driver": "integration_delay"
+  }
 }

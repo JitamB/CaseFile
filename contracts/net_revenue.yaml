@@ -24,9 +24,15 @@ refresh: { source: billing, cadence: daily, sla_hours: 26 }
 
 # [+] DEFINITION EPOCHS — the formula's history; Verify recomputes boundary
 #     periods under adjacent epochs to separate drift from business
+# Three eras. The 2026-02-01 boundary is scenario E (§25): until then the metric
+# was computed on gross invoiced value, so excluding discounts steps the series
+# down by the discount rate — an alarming drop that is a definition change, not
+# a business event. §15 S1 recomputes the boundary period under the adjacent
+# epoch; the step vanishes, and the case closes with zero model calls.
 epochs:
-  - { effective_from: 2023-04-01, formula: "SUM(invoice_line.amount_net)" }
-  - { effective_from: 2025-11-01, formula: "SUM(invoice_line.amount_net) - SUM(credit_note.amount)" }
+  - { effective_from: 2023-04-01, formula: "SUM(invoice_line.amount_gross)" }
+  - { effective_from: 2025-11-01, formula: "SUM(invoice_line.amount_gross) - SUM(credit_note.amount)" }
+  - { effective_from: 2026-02-01, formula: "SUM(invoice_line.amount_net) - SUM(credit_note.amount)" }
 
 # [+] COMPOSITION — cross-KPI edges, enables cross-KPI attribution
 composition:

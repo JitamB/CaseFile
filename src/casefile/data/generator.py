@@ -38,6 +38,9 @@ from casefile.data.scm import (
     PRICING_ONSET,
     PRICING_UPLIFT,
     PRODUCTS,
+    REFUND_AMOUNT,
+    REFUND_MONTH,
+    REFUND_REASON,
     SPAN_END,
     SPAN_START,
     Account,
@@ -237,7 +240,11 @@ def _billing(
             ingested = _ingested(invoice_date, rng, low=4, high=26)
             products = subscriptions[account.account_id]
             monthly = account.arr / 12.0
-            volume = seasonal_factor(invoice_date) * rng.uniform(0.94, 1.06)
+            volume = (
+                seasonal_factor(invoice_date)
+                * world.demand_shock(account.region_at(invoice_date), month)
+                * rng.uniform(0.94, 1.06)
+            )
             gross = net = 0.0
             line_no = 0
 
@@ -291,8 +298,13 @@ def _line(
 def _credit_notes(
     world: World, rng: random.Random, invoices: list[list[Any]]
 ) -> list[list[Any]]:
-    """A thin, ordinary trickle. Scenario D's refund batch — one credit note
-    worth 71% of a movement — is a separate scenario and arrives with it."""
+    """A thin, ordinary trickle, plus scenario D.
+
+    §25 D is a single credit note worth ~71% of a movement — an alarming drop
+    that is not real, closed at Verify on the artefact check with zero model
+    calls. It is written last so that its credit id is stable no matter how the
+    ordinary trickle lands.
+    """
     rows: list[list[Any]] = []
     for index, invoice in enumerate(invoices):
         if rng.random() > 0.012:
@@ -306,7 +318,26 @@ def _credit_notes(
             rng.choice(("service_credit", "billing_error", "goodwill")),
             _ingested(when, rng, low=4, high=26),
         ])
+
+    rows.append(_refund_batch(world, rng, invoices))
     return rows
+
+
+def _refund_batch(
+    world: World, rng: random.Random, invoices: list[list[Any]]
+) -> list[Any]:
+    """Scenario D. One credit note against the refund month's invoice for the
+    largest account in the refund region."""
+    account = world.refund_batch_account()
+    month_end = _month_end(REFUND_MONTH).isoformat()
+    invoice = next(
+        row for row in invoices if row[1] == account.billing_id and row[2] == month_end
+    )
+    when = _safe_month_day(REFUND_MONTH, 22)
+    return [
+        "CN-REFUND-01", when.isoformat(), invoice[0], account.billing_id,
+        f"{REFUND_AMOUNT:.2f}", REFUND_REASON, _ingested(when, rng, low=4, high=26),
+    ]
 
 
 def _opportunities(world: World, rng: random.Random) -> list[list[Any]]:

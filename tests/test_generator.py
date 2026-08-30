@@ -288,18 +288,54 @@ def test_the_answer_sheet_agrees_with_the_contract(data: Path) -> None:
     construction, and the harness would be measuring nothing."""
     contract = load(ROOT / "contracts" / "net_revenue.yaml")
     known = {d.id for d in contract.drivers}
-    sealed = truth(data)
+    sealed = truth(data)["scenarios"]["A"]
 
     assert sealed["true_driver"] in known
     assert {event["driver_id"] for event in sealed["events"]} <= known
 
 
 def test_the_answer_sheet_records_the_verdict_the_scenario_forces(data: Path) -> None:
-    sealed = truth(data)
+    sealed = truth(data)["scenarios"]["A"]
     assert sealed["scenario"] == "A"
     assert sealed["expected_verdict"] == "likely"
     assert len(sealed["footprint_accounts"]) == 2
     assert sealed["footprint_account_names"] == list(TREATED)
+
+
+def test_the_two_not_real_scenarios_are_sealed_with_the_check_that_catches_them(
+    data: Path,
+) -> None:
+    """§25 D and E close at Verify with zero model calls. Which *check* closes
+    each is the part worth sealing: a case that closed for the right reason by
+    accident would grade the same as one that reasoned, and the harness would
+    never know."""
+    sealed = truth(data)["scenarios"]
+
+    assert sealed["D"]["failing_check"] == "artefact"
+    assert sealed["E"]["failing_check"] == "definition_drift"
+    for scenario in ("D", "E"):
+        assert sealed[scenario]["closes_at"] == "verify"
+        assert sealed[scenario]["expected_model_calls"] == 0
+        assert sealed[scenario]["true_driver"] is None
+
+
+def test_the_refund_batch_dominates_its_movement(data: Path) -> None:
+    """§25 D: *"single credit note = 71% of delta"*. The share is what the
+    artefact check reads against `max_single_record_share: 0.35`, so it is the
+    number that has to land — not the headline percentage."""
+    import csv
+
+    sealed = truth(data)["scenarios"]["D"]
+    with (data / "raw" / "billing" / "credit_note.csv").open(encoding="utf-8") as handle:
+        notes = list(csv.DictReader(handle))
+
+    batch = [n for n in notes if n["credit_id"] == sealed["credit_id"]]
+    assert len(batch) == 1
+    assert float(batch[0]["amount"]) == sealed["credit_amount"]
+    assert batch[0]["reason_code"] == "refund_batch"
+    # No other credit note in the corpus comes close; this one is the artefact.
+    others = [float(n["amount"]) for n in notes if n["credit_id"] != sealed["credit_id"]]
+    assert sealed["credit_amount"] > 3 * max(others)
 
 
 # ── §22's volumes and cadences ────────────────────────────────────────────────

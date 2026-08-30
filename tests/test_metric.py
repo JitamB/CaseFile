@@ -193,9 +193,14 @@ def test_every_contract_formula_and_every_epoch_formula_parses(
 def test_the_formula_in_force_changes_at_the_epoch_boundary() -> None:
     contract = load(CONTRACTS / "net_revenue.yaml")
 
-    assert formula_for(contract, date(2025, 10, 31)) == "SUM(invoice_line.amount_net)"
-    assert formula_for(contract, date(2025, 11, 1)) == contract.formula
-    assert previous_formula(contract, date(2025, 11, 1)) == "SUM(invoice_line.amount_net)"
+    assert formula_for(contract, date(2025, 10, 31)) == "SUM(invoice_line.amount_gross)"
+    assert formula_for(contract, date(2026, 1, 31)) == (
+        "SUM(invoice_line.amount_gross) - SUM(credit_note.amount)"
+    )
+    assert formula_for(contract, date(2026, 2, 1)) == contract.formula
+    assert previous_formula(contract, date(2026, 2, 1)) == (
+        "SUM(invoice_line.amount_gross) - SUM(credit_note.amount)"
+    )
 
 
 def test_the_first_epoch_has_nothing_before_it() -> None:
@@ -332,6 +337,53 @@ def test_a_ratio_with_nothing_due_is_undefined_rather_than_zero(
     """No renewals were due, so the renewal rate has no value. Reporting 0%
     would open a case on a month in which nothing happened."""
     assert value(con, contracts["gross_renewal_rate"], "2022-01") is None
+
+
+# ── Scenario E — the definition change, which lives only in the contract ─────
+
+
+def test_the_epoch_boundary_creates_a_step_that_the_adjacent_epoch_dissolves(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> None:
+    """§25 E, and the whole shape of it: the movement exists in the semantic
+    layer, never in the data. No row of the corpus changed.
+
+    Under the formula in force, North's February falls past the 3% materiality
+    threshold. Recomputed under the *adjacent* epoch — consistently, both months
+    on the pre-2026-02 definition — the step largely dissolves, which is exactly
+    §15's test for drift: *"a step that vanishes under a consistent definition is
+    drift"*.
+    """
+    contract = contracts["net_revenue"]
+    dimensions = {"region": "North"}
+    boundary = date(2026, 2, 1)
+
+    prior = previous_formula(contract, boundary)
+    assert prior is not None, "scenario E needs an epoch before the boundary"
+
+    def step(formula: str | None) -> float:
+        before = value(con, contract, "2026-01", dimensions, formula=formula)
+        after = value(con, contract, "2026-02", dimensions, formula=formula)
+        assert before is not None and after is not None
+        return (after - before) / before
+
+    in_force = step(None)
+    consistent = step(prior)
+
+    assert in_force < -contract.materiality.relative, "E must look material to open at all"
+    assert abs(consistent) < contract.materiality.relative, "the step must dissolve"
+    assert abs(consistent) < abs(in_force) / 2
+
+
+def test_the_headline_case_is_nowhere_near_an_epoch_boundary(
+    contracts: dict[str, KPIContract]
+) -> None:
+    """The guard on scenario E: the drift check only recomputes *boundary*
+    periods, so scenario A must not sit on one. If a later epoch were ever added
+    in March or April, A would close as drift and the project's headline case
+    would disappear into a check that was meant for someone else."""
+    boundaries = {epoch.effective_from for epoch in contracts["net_revenue"].epochs}
+    assert not any(date(2026, 3, 1) <= b <= date(2026, 4, 30) for b in boundaries)
 
 
 # ── Periods — calendar and 4-4-5 ─────────────────────────────────────────────
