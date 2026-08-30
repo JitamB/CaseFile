@@ -61,7 +61,7 @@ drivers:
     lever: { action: pricing_review, owner_role: cro, lag_days: 30, save_rate: [0.30, 0.60] }
   - id: competitor_offer
     type: external
-    evidence_sources: [crm_lost_reason, news]
+    evidence_sources: [crm_lost_reason, news, crm_notes]
     max_lag_days: 90
     probe_sql: probes/lost_reason_scan.sql
     lever: { action: competitive_desk_review, owner_role: vp_sales,

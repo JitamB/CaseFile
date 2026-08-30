@@ -62,7 +62,7 @@ drivers:
              lag_days: 14, save_rate: [0.75, 1.00] }
   - id: competitor_offer
     type: external
-    evidence_sources: [crm_lost_reason, news]
+    evidence_sources: [crm_lost_reason, news, crm_notes]
     max_lag_days: 90
     probe_sql: probes/lost_reason_scan.sql
     lever: { action: competitive_desk_review, owner_role: vp_sales,
