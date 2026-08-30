@@ -40,9 +40,11 @@ import duckdb
 from casefile.metric import (
     PERIOD_COLUMN,
     calendar_months,
+    formula_for,
     parse,
     period_bounds,
     sliceable,
+    term_total,
     value,
 )
 from casefile.models import (
@@ -108,14 +110,20 @@ def decompose(
             f"{contract.id}: none of {contract.decomposition_dims} can slice every term "
             "of the formula, so there is no decomposition that adds up"
         )
+
+    denominator = (
+        _denominator_totals(con, contract, window, dimensions)
+        if parse(contract.formula).denominator
+        else None
+    )
     by_dimension = {
-        dimension: _nodes(con, contract, window, dimensions, dimension, total)
+        dimension: _nodes(con, contract, window, dimensions, dimension, total, denominator)
         for dimension in free
     }
     if contract.composition:
         by_dimension["kpi"] = _cross_kpi(con, contract, window, dimensions, total)
 
-    _nest(con, contract, window, dimensions, by_dimension, free, total)
+    _nest(con, contract, window, dimensions, by_dimension, free, total, denominator)
 
     accounts = _footprint_keys(by_dimension.get("account", []))
     return ContributionTree(
@@ -234,11 +242,17 @@ def _nodes(
     dimensions: dict[str, str],
     dimension: str,
     total: float,
+    denominator: tuple[float, float] | None = None,
 ) -> list[ContributionNode]:
     column = _column(dimension)
     nodes = []
     for key in _keys(con, contract, window, dimensions, dimension):
-        delta = _delta(con, contract, window, {**dimensions, column: key})
+        held = {**dimensions, column: key}
+        delta = (
+            _ratio_share(con, contract, window, held, denominator)
+            if denominator is not None
+            else _delta(con, contract, window, held)
+        )
         if delta == 0:
             continue
         nodes.append(
@@ -249,6 +263,60 @@ def _nodes(
     return sorted(nodes, key=lambda n: (-abs(n.delta), n.key))
 
 
+def _denominator_totals(
+    con: duckdb.DuckDBPyConnection,
+    contract: KPIContract,
+    window: _Window,
+    dimensions: dict[str, str],
+) -> tuple[float, float]:
+    """`(D_t, D_t-1)` for a ratio formula, at a fixed scope — computed once and
+    threaded unchanged through every nesting depth. See `_ratio_share`."""
+    latest_start, latest_end = period_bounds(con, contract, window.current)
+    earlier_start, earlier_end = period_bounds(con, contract, window.previous)
+    latest_terms = parse(formula_for(contract, latest_end)).denominator
+    earlier_terms = parse(formula_for(contract, earlier_end)).denominator
+    return (
+        term_total(con, contract, latest_terms, latest_start, latest_end, dimensions),
+        term_total(con, contract, earlier_terms, earlier_start, earlier_end, dimensions),
+    )
+
+
+def _ratio_share(
+    con: duckdb.DuckDBPyConnection,
+    contract: KPIContract,
+    window: _Window,
+    dimensions: dict[str, str],
+    denominator: tuple[float, float],
+) -> float:
+    """One key's exact contribution to a ratio KPI's movement.
+
+    Not `value()` restricted to the key — that recomputes the ratio on the
+    key's own (often tiny, often zero) denominator and swings between 0 and 1
+    based on whether the key had anything up for renewal in either period,
+    which is noise, not attribution (docs/DECISIONS.md, 2026-08-31). Instead:
+    this key's numerator, divided by the SAME fixed whole-scope denominator
+    used at every level of the tree, differenced across periods.
+
+    That telescopes exactly. `Σ_key N_key = N` (SUM is additive over a
+    partition of the numerator), and every key here divides by the identical
+    `(D_t, D_t1)`, so `Σ_key contribution_key = N_t/D_t - N_t1/D_t1`, which is
+    the parent's own delta — at any nesting depth, because the denominator is
+    a shared constant, never itself re-sliced by key.
+    """
+    latest_start, latest_end = period_bounds(con, contract, window.current)
+    earlier_start, earlier_end = period_bounds(con, contract, window.previous)
+    latest_terms = parse(formula_for(contract, latest_end)).numerator
+    earlier_terms = parse(formula_for(contract, earlier_end)).numerator
+    latest_num = term_total(con, contract, latest_terms, latest_start, latest_end, dimensions)
+    earlier_num = term_total(
+        con, contract, earlier_terms, earlier_start, earlier_end, dimensions
+    )
+    den_t, den_t1 = denominator
+    latest = latest_num / den_t if den_t else 0.0
+    earlier = earlier_num / den_t1 if den_t1 else 0.0
+    return latest - earlier
+
+
 def _nest(
     con: duckdb.DuckDBPyConnection,
     contract: KPIContract,
@@ -257,6 +325,7 @@ def _nest(
     by_dimension: dict[str, list[ContributionNode]],
     free: list[str],
     total: float,
+    denominator: tuple[float, float] | None = None,
 ) -> None:
     """§15's *"greedy top-down to 80% or depth 3"*.
 
@@ -276,7 +345,9 @@ def _nest(
         child_dim = order[depth]
         for node in _explaining(nodes):
             inner = {**held, _column(node.dimension): node.key}
-            children = _nodes(con, contract, window, inner, child_dim, node.delta or total)
+            children = _nodes(
+                con, contract, window, inner, child_dim, node.delta or total, denominator
+            )
             node.children.extend(_explaining(children))
             expand(node.children, inner, depth + 1)
 

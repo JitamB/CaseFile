@@ -61,6 +61,25 @@ def east(
     return decompose(con, contracts["net_revenue"], "2026-04", {"region": "East"})
 
 
+@pytest.fixture(scope="module")
+def renewal_rate_dip(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> ContributionTree:
+    """`gross_renewal_rate`'s real, pre-existing 2024-12 dip — the same one
+    `test_verify.py::test_a_ratio_kpi_also_has_no_single_record_share` anchors
+    on. Unlike the East/2026-04 fixture used elsewhere in this file, the ratio
+    actually moves here, which is the only way to exercise per-key attribution
+    on a ratio-of-sums KPI at all."""
+    return decompose(con, contracts["gross_renewal_rate"], "2024-12", {})
+
+
+@pytest.fixture(scope="module")
+def nrr_dip(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> ContributionTree:
+    return decompose(con, contracts["nrr"], "2024-12", {})
+
+
 def depth(nodes: list[ContributionNode]) -> int:
     return 1 + max((depth(n.children) for n in nodes if n.children), default=0)
 
@@ -138,6 +157,48 @@ def test_every_dimension_sums_to_the_whole_movement(
     nodes = east.by_dimension[dimension]
     assert sum(n.delta for n in nodes) == pytest.approx(east.total_delta, rel=1e-9)
     assert sum(n.share for n in nodes) == pytest.approx(1.0, rel=1e-9)
+
+
+@pytest.mark.parametrize("dimension", ["region", "segment", "account"])
+def test_a_ratio_kpis_dimensions_also_sum_to_the_whole_movement(
+    renewal_rate_dip: ContributionTree, dimension: str
+) -> None:
+    """The bug this guards: `_nodes` used to call `value()` per key, recomputing
+    the ratio on that key's own tiny (often zero) denominator — a swing between
+    0 and 1 that has nothing to do with what the key contributed, and does not
+    sum to anything. Fixed by partitioning the numerator only, over a fixed
+    whole-scope denominator shared by every key (docs/DECISIONS.md, 2026-08-31).
+    If it regresses, this is the only test in the suite that would catch it —
+    `east` above is `net_revenue`, which is additive and never exercised the
+    broken path."""
+    nodes = renewal_rate_dip.by_dimension[dimension]
+    assert sum(n.delta for n in nodes) == pytest.approx(
+        renewal_rate_dip.total_delta, rel=1e-9
+    )
+    assert sum(n.share for n in nodes) == pytest.approx(1.0, rel=1e-9)
+
+
+@pytest.mark.parametrize("dimension", ["region", "segment"])
+def test_a_compound_numerator_ratio_also_sums_to_the_whole_movement(
+    nrr_dip: ContributionTree, dimension: str
+) -> None:
+    """`nrr`'s numerator is `SUM(renewal.arr_renewed) + SUM(opportunity.arr_value)`
+    — two terms from two different tables — so this also proves `term_total`
+    sums mixed-table terms correctly under a per-key filter."""
+    nodes = nrr_dip.by_dimension[dimension]
+    assert sum(n.delta for n in nodes) == pytest.approx(nrr_dip.total_delta, rel=1e-9)
+    assert sum(n.share for n in nodes) == pytest.approx(1.0, rel=1e-9)
+
+
+def test_a_ratio_kpi_still_nests(renewal_rate_dip: ContributionTree) -> None:
+    """Nesting is a display truncation (`_explaining`'s 80% coverage), not a
+    partition — a child list is not expected to sum to its parent's delta, only
+    the flat per-dimension lists above are. This just checks nesting still
+    happens, and still respects the depth cap, on a ratio KPI."""
+    segments = renewal_rate_dip.by_dimension["segment"]
+    assert any(n.children for n in segments)
+    for nodes in renewal_rate_dip.by_dimension.values():
+        assert depth(nodes) <= MAX_DEPTH
 
 
 def test_price_volume_and_mix_sum_to_the_movement(east: ContributionTree) -> None:

@@ -29,6 +29,7 @@ from casefile.metric import (
     parse,
     period_bounds,
     previous_formula,
+    term_total,
     value,
 )
 from casefile.models import KPIContract
@@ -337,6 +338,24 @@ def test_a_ratio_with_nothing_due_is_undefined_rather_than_zero(
     """No renewals were due, so the renewal rate has no value. Reporting 0%
     would open a case on a month in which nothing happened."""
     assert value(con, contracts["gross_renewal_rate"], "2022-01") is None
+
+
+def test_term_total_reproduces_the_ratio_value_split_apart(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> None:
+    """`value()` is `term_total(numerator) / term_total(denominator)` — it just
+    no longer says so. Stage 2's ratio decomposition needs the two pieces
+    separately; this is the regression check that the extraction changed
+    nothing about what `value()` itself returns."""
+    contract = contracts["gross_renewal_rate"]
+    period = "2024-12"
+    start, end = period_bounds(con, contract, period)
+    parsed = parse(formula_for(contract, end))
+
+    numerator = term_total(con, contract, parsed.numerator, start, end, {})
+    denominator = term_total(con, contract, parsed.denominator, start, end, {})
+
+    assert numerator / denominator == pytest.approx(value(con, contract, period))
 
 
 # ── Scenario E — the definition change, which lives only in the contract ─────
