@@ -9,11 +9,13 @@
 setup:
 	pip install -e ".[dev]"
 
+# Deterministic by construction: same seed, same bytes. The manifest of sha256
+# digests it writes is what ladder step 0.7 is verified against.
+data:
+	python -m casefile.data.generator
+
 # Not yet implemented. These fail loudly rather than succeeding vacuously — a
 # target that prints nothing and exits 0 reads as "it worked".
-data:
-	@echo "make data arrives at ladder step 0.7 — src/casefile/data/generator.py" >&2; exit 1
-
 corpus:
 	@echo "make corpus arrives at ladder step 1.5 — data/corpus/" >&2; exit 1
 
