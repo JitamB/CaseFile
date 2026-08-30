@@ -17,7 +17,7 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from casefile.data.loader import FISCAL_ANCHOR, QUARTER_SHAPE, TABLES, connect
+from casefile.data.loader import FISCAL_ANCHOR, QUARTER_SHAPE, TABLES, build, connect
 from casefile.data.scm import AS_OF, OPS_START, SPAN_END, SPAN_START
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -239,6 +239,25 @@ def test_the_east_decline_survives_conformance(con: duckdb.DuckDBPyConnection) -
         ).fetchall()
     )
     assert (april - march) / march == pytest.approx(-0.08, abs=0.01)
+
+
+def test_the_exclusion_list_must_name_accounts_that_exist(
+    generated: Path, tmp_path: Path
+) -> None:
+    """§14.1's first filter excludes intercompany and test accounts, and the
+    list is committed configuration rather than CRM data. A stale entry would
+    exclude nothing while the contract still claimed to exclude something, so
+    the loader refuses rather than quietly narrowing the filter to nothing."""
+    stale = tmp_path / "test_accounts.csv"
+    stale.write_text("account_id,reason\nACC-9999,gone\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="stale"):
+        build(
+            raw_dir=generated / "raw",
+            db_path=tmp_path / "stale.duckdb",
+            alias_path=ROOT / "data" / "account_alias.csv",
+            test_accounts_path=stale,
+        )
 
 
 def test_the_watermark_is_the_max_across_all_of_a_source_s_tables(
