@@ -39,6 +39,8 @@ from casefile.data.scm import (
     OPS_START,
     SCENARIO_B_COUNT,
     SCENARIO_B_REGION,
+    SCENARIO_C_COUNT,
+    SCENARIO_C_REGION,
     SPAN_END,
     SPAN_START,
     TREATED,
@@ -346,6 +348,55 @@ def test_the_answer_sheet_names_scenario_bs_true_driver_and_footprint(data: Path
     assert sealed["dimensions"] == {"region": SCENARIO_B_REGION}
     assert len(sealed["footprint_accounts"]) == SCENARIO_B_COUNT
     assert sealed["expected_verdict"] == "undetermined"
+
+
+# ── §25 C: sparse history, a real movement to exercise it on ─────────────────
+
+
+def test_scenario_cs_footprint_carries_the_supply_delay(data: Path) -> None:
+    """Only the footprint's P1 tickets, only inside the window, take the hit
+    — everything else keeps the ordinary `rng.uniform(2, 96)` shape."""
+    sealed = truth(data)["scenarios"]["C"]
+    footprint = set(sealed["footprint_accounts"])
+    window_tickets = [
+        t
+        for t in rows(data, "product_ops/ticket.csv")
+        if t["account_id"] in footprint
+        and t["priority"] == "P1"
+        and t["resolved_at"]
+        and "2026-01-01" <= t["created_at"] < "2026-03-01"
+    ]
+    assert window_tickets
+    hours = [
+        (datetime.fromisoformat(t["resolved_at"]) - datetime.fromisoformat(t["created_at"]))
+        .total_seconds()
+        / 3600.0
+        for t in window_tickets
+    ]
+    # Ordinary P1 resolution tops out at 96 * 2.1 ≈ 202h; the multiplier pushes
+    # a meaningful share of the footprint's window tickets well past that.
+    assert sum(1 for h in hours if h > 210) >= len(hours) // 3
+
+
+def test_scenario_c_never_moves_scenario_as_already_measured_figures(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> None:
+    """Modifies an existing ticket's resolved-at, never adds a row — so there
+    is no rng draw count to shift downstream, unlike scenario B's first
+    attempt. Checked anyway: an assumption here is exactly how that bug
+    reached this file the first time."""
+    east = decompose(con, contracts["net_revenue"], "2026-04", {"region": "East"})
+    assert east.total_delta == pytest.approx(-26_642_279, abs=100)
+    assert east.concentration(2) == pytest.approx(0.9077, abs=0.001)
+
+
+def test_the_answer_sheet_names_scenario_cs_true_driver_and_footprint(data: Path) -> None:
+    sealed = truth(data)["scenarios"]["C"]
+    assert sealed["scenario"] == "C"
+    assert sealed["true_driver"] == "supply_delay"
+    assert sealed["dimensions"] == {"region": SCENARIO_C_REGION}
+    assert len(sealed["footprint_accounts"]) == SCENARIO_C_COUNT
+    assert sealed["expected_verdict"] == "likely"
 
 
 # ── The sealed answer sheet ───────────────────────────────────────────────────
