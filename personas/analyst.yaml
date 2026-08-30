@@ -1,0 +1,9 @@
+# ── personas/analyst.yaml ──────────────────────────────────────────────
+#
+# §11's analyst, who "sees the full decomposition tree and every eliminated
+# theory". Region-scoped like the VP, but with a wider column grant: names and
+# amounts yes, `contract_end` no.
+id: analyst_east
+role_key: analyst
+label: Revenue Analyst, East
+region: East
