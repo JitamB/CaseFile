@@ -103,7 +103,8 @@ def verify(
     ]
 
     movement = _movement(con, contract, period, dimensions)
-    checks.append(_artefact(con, contract, period, dimensions, movement, start, end))
+    comparison, _ = period_bounds(con, contract, _previous_period(con, contract, period))
+    checks.append(_artefact(con, contract, dimensions, movement, comparison, start, end))
 
     borrowed = _history_is_sparse(contract, end)
     if borrowed:
@@ -147,6 +148,16 @@ def trigger_for(
 
 
 # ── The movement under test ───────────────────────────────────────────────────
+
+
+def _previous_period(
+    con: duckdb.DuckDBPyConnection, contract: KPIContract, period: str
+) -> str:
+    _, end = period_bounds(con, contract, period)
+    labels = calendar_months(date(end.year - 1, end.month, 1), end)
+    if len(labels) < 2:
+        raise VerifyError(f"{contract.id} {period}: no previous period")
+    return labels[-2]
 
 
 def _movement(
@@ -402,9 +413,9 @@ def _consistent_movement(
 def _artefact(
     con: duckdb.DuckDBPyConnection,
     contract: KPIContract,
-    period: str,
     dimensions: dict[str, str],
     movement: _Movement,
+    comparison: date,
     start: date,
     end: date,
 ) -> VerificationCheck:
@@ -413,11 +424,19 @@ def _artefact(
     Two ways that happens, both measured as a share of |Δ| against
     `max_single_record_share`:
 
-    * **single-record dominance** — the largest individual record in the period,
-      on either side of the formula. §25 D is a credit note worth 71% of Δ.
-    * **period-boundary slippage** — records whose business date lands in this
-      period but which were recorded in another, so the movement is a timing
-      artefact of the close rather than a change in trade.
+    * **single-record dominance** — the largest individual record anywhere in
+      the comparison, on either side of the formula. §25 D is a credit note
+      worth 71% of Δ.
+    * **period-boundary slippage** — records whose business date lands in the
+      period under test but which were recorded in another, so the movement is a
+      timing artefact of the close rather than a change in trade. This one reads
+      the period alone: slippage is a statement about *this* close.
+
+    **Both periods, not just the period under test.** A movement is a difference,
+    so a single record dominates it whichever side it sits on. A refund batch in
+    March makes April look like a recovery of exactly the same size, and a check
+    that only read April would call that recovery real — then send somebody to
+    find out why business improved when nothing did.
     """
     scale = abs(movement.delta)
     if scale == 0:
@@ -444,7 +463,7 @@ def _artefact(
             statistic=None,
         )
 
-    largest, record = _largest_record(con, contract, dimensions, start, end)
+    largest, record = _largest_record(con, contract, dimensions, comparison, end)
     slipped = _slippage(con, contract, dimensions, start, end)
     threshold = contract.data_quality.max_single_record_share
 
