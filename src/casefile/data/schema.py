@@ -24,9 +24,9 @@ DERIVED: frozenset[str] = frozenset(
     {
         "billing.raw_invoice",
         "billing.raw_credit",
-        "metric.net_revenue",
-        "metric.nrr",
         "dashboard.exec_revenue",
+        "dashboard.renewals",
+        "dashboard.support_sla",
     }
 )
 
@@ -59,7 +59,15 @@ ROLES: frozenset[str] = frozenset(
 
 
 def known_tables() -> frozenset[str]:
-    """Fully-qualified `source.table` names, plus the derived ones."""
-    return frozenset(
-        f"{source}.{table}" for source, tables in SOURCES.items() for table in tables
-    ) | DERIVED
+    """Fully-qualified `source.table` names, the derived ones, and one
+    `metric.<kpi>` per KPI in §23.
+
+    Each of the six KPIs materialises a table of its own, and contracts name
+    each other's through `lineage.downstream` — that is what makes §23's
+    connection graph a thing the validator can check rather than a picture.
+    """
+    return (
+        frozenset(f"{source}.{table}" for source, tables in SOURCES.items() for table in tables)
+        | DERIVED
+        | frozenset(f"metric.{kpi}" for kpi in KPIS)
+    )
