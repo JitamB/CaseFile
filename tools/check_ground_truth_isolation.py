@@ -25,14 +25,24 @@ ALLOWED_FILES = ("src/casefile/data/generator.py",)
 
 
 def main() -> int:
-    tracked = subprocess.run(
-        ["git", "ls-files", "-z", "*.py"], capture_output=True, text=True, check=True
+    # `--others --exclude-standard` includes files that are not committed yet.
+    # Without it a new module is invisible to this rule until the moment it is
+    # committed, so the first place anyone hears about a violation is CI — which
+    # is exactly how this check failed on ladder step 0.7. A rule that only
+    # fires after you push is a rule that costs a round trip every time.
+    listed = subprocess.run(
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "*.py"],
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.split("\0")
 
-    candidates = (
-        p
-        for p in tracked
-        if p and not p.startswith(ALLOWED_PREFIXES) and p not in ALLOWED_FILES
+    candidates = sorted(
+        {
+            p
+            for p in listed
+            if p and not p.startswith(ALLOWED_PREFIXES) and p not in ALLOWED_FILES
+        }
     )
     offenders: list[tuple[str, int, str]] = []
     for path in candidates:
