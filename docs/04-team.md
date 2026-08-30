@@ -45,6 +45,7 @@ appears anywhere in a case, Track A computed it.**
 | Module | Stage | Contents |
 |---|---|---|
 | `contract.py` + `contracts/*.yaml` | — | `KPIContract` Pydantic model, YAML loader, validator. 6 contracts |
+| `metric.py` | — | Executes a contract's `formula`/`filters`/`epochs` against the warehouse — what makes §14.1 *"executable configuration"* rather than a claim about a file nobody runs |
 | `data/generator.py` | — | SCM, injected events, propagation, three-grain rendering, corruption, `ground_truth.json` |
 | `data/loader.py` | S0 | DuckDB ingest, entity-alias conformance, fiscal calendar, watermarks |
 | `stats/` | — | `stl.py`, `changepoint.py` (PELT), `did.py` (DiD + placebo rank), `overlap.py` (Jaccard), `correlation.py` (Spearman), `pvm.py`, `robust_z.py` |
@@ -77,12 +78,19 @@ appears anywhere in a case, Track A computed it.**
 3. generator.py — structured only            → verify: 8% East drop is visible in the data
 4. loader.py + watermarks                    → verify: three sources join on account_id
 5. stats/ library                            → verify: each fn matches a hand-computed value
-6. verify.py (S1)                            → verify: scenarios D and E close, 0 LLM calls
-7. decompose.py (S2)                         → verify: K(2) = 0.88 on scenario A
-8. remaining 5 contracts                     → verify: all 6 validate
-9. generator — scenarios B, C, D, E, F, G    → verify: each triggers its expected path
-10. Squeeze benchmark                        → verify: external F1 recorded in README
+6. remaining 5 contracts + metric.py         → verify: all 6 validate and execute
+7. generator — scenarios D and E             → verify: both close at Verify, 0 LLM calls
+8. verify.py (S1)                            → verify: scenarios D and E close, 0 LLM calls
+9. decompose.py (S2)                         → verify: K(2) = 0.88 on scenario A
+10. generator — scenarios B, C, F, G         → verify: each triggers its expected path
+11. Squeeze benchmark                        → verify: external F1 recorded in README
 ```
+
+**Steps 6 and 7 moved ahead of where §44 first printed them.** 1.3's verify needs scenarios D
+and E to exist, and 1.4's cross-KPI attribution needs contracts with `composition` edges;
+neither existed until the remaining five contracts and the two not-real scenarios were built.
+Executing the ladder in its printed order would have made both steps merge green having
+verified nothing — the same defect class §46.4 already logged for 0.4-before-0.2 at P0.
 
 ---
 
@@ -98,14 +106,14 @@ entire LLM boundary** — and owns proving that the boundary holds.
 |---|---|---|
 | `llm/` | — | `LLMProvider` protocol, schema enforcement, `Usage`, telemetry wrapper, price table, prompt caching |
 | `engine/hypothesise.py` | S3 | Deterministic registry enumeration, LLM annotation, `unmodelled` path, guardrails |
-| `retrieval/` | S4b | Footprint filter → BM25 + `all-MiniLM-L6-v2` hybrid rank |
+| `retrieval/` | S4b | Footprint filter → BM25 (default) or `all-MiniLM-L6-v2` (behind the `embed` extra) |
 | `engine/evidence.py` | S4a/4c | SQL probes, **counted absence**, schema-forced extraction with quote spans |
 | `probes/*.sql` | S4a | One template per driver |
 | `engine/challenge.py` | S5 | Four tests, calling `stats/`. Returns `TestMatrix` |
 | `engine/adjudicate.py` | S6 | Verdict rubric, confidence ceilings, **discriminating question** |
 | `engine/recommend.py` | S7 | Contract lever lookup → the seven-field recommendation |
 | `ledger.py` | — | Append-only `EvidenceItem` store |
-| `data/corpus/` | — | Frozen text generation: tickets, notes, news — with the 85% noise floor and the misleading documents |
+| `data/corpus.py` + `data/corpus/authored/` | — | Template noise (tickets, notes, news; 85% floor) + the ~25 hand-authored signal/misdirection documents |
 
 ### Dependencies
 - **On nobody after day 1.** `models.py` and the fixtures are written jointly that morning.
@@ -120,9 +128,9 @@ entire LLM boundary** — and owns proving that the boundary holds.
 | # | Deliverable | Definition of done |
 |---|---|---|
 | B1 | LLM provider layer | Provider swap touches one file; every call returns `Usage` |
-| B2 | Frozen text corpus | 45k tickets / 9k notes / 200 news items committed; 85% irrelevant; misleading docs present |
+| B2 | Frozen text corpus | 46.5k tickets / 9.6k notes / 191 news items, byte-identical from the seed; ~25 authored signal/misdirection documents committed and reviewable; measured 83–90% irrelevant |
 | B3 | Hypothesise (S3) | Hypothesis set is registry-enumerated and identical across runs; the model can only annotate and flag `unmodelled`, never add or remove a tested hypothesis; **zero numbers in output** |
-| B4 | Scoped retrieval | 45k → ~200 → top 15; measured input tokens ≈14.5k, not ≈200k |
+| B4 | Scoped retrieval | 64.6k → ~1.0–1.3k → top 15, measured; recall@15 = 1.000 over the authored documents settles BM25 as the default (§18) |
 | B5 | Evidence + absence | `kind:"absence"` items carry an explicit denominator |
 | B6 | Challenge (S5) | Refutes both decoys on scenario A; Dose returns `inconclusive` at n=2; Control reports the real effect's placebo rank |
 | B7 | Adjudicate (S6) | Scenario A → **Likely** with ranked attribution. Scenario B → **Undetermined** + correct discriminating question. Scenario G → **Contested** |
@@ -134,7 +142,7 @@ entire LLM boundary** — and owns proving that the boundary holds.
 1. models.py (joint, day 1)
 2. llm/ provider + schema enforcement + Usage → verify: a stub provider round-trips a schema
 3. corpus generation, frozen                  → verify: 85% noise measured, misleading docs present
-4. retrieval/ + footprint scoping             → verify: 45k → ~200 on the East fixture
+4. retrieval/ + footprint scoping             → verify: 64.6k → ~1.0–1.3k on the East fixture
 5. hypothesise.py (S3)                        → verify: hypothesis set identical across two runs; an off-registry suggestion lands as `unmodelled`
 6. evidence.py probes + absence               → verify: "0 of 12 lost-reason" is produced
 7. evidence.py extraction (4c)                → verify: every claim carries doc_id + span

@@ -229,10 +229,17 @@ is what Stage 1 checks.
 | Check | Method | Fails when |
 |---|---|---|
 | Freshness | `now − watermark` vs `sla_hours` | Stale → provisional, cap confidence |
-| Completeness | count vs 28-day median by weekday; vintage comparison | Rows still landing |
+| Completeness | share of the period's records that arrived inside their source's ingest SLA | Rows still landing |
 | Definition drift | recompute the boundary period under adjacent contract `epochs`; a step that vanishes under a consistent definition is drift | Metric changed, not the business |
 | Artefacts | single-record dominance > 0.35; refund-batch; period-boundary slippage | One invoice *is* the movement |
 | Materiality | STL → robust z (MAD), persistence ≥ 2 **and** relative **and** absolute thresholds | Noise, or real but immaterial |
+
+**Completeness deviates from a literal weekday median, deliberately.** Billing lands one date
+per month, so a weekday median is vacuous — and the deeper problem is that a row-count
+comparison cannot tell a missing batch from a churned customer. Scenario A is exactly that:
+two accounts leave, the row count drops, and a count-based check would close the headline
+case as incomplete data. Measuring ingest punctuality instead moves only when a batch is
+late, never when the business changes.
 
 **Sparse history** (`history < 2 × seasonal period`): borrow baseline from peer segments;
 set `confidence_ceiling = Likely`.
@@ -297,8 +304,13 @@ Undetermined.
 
 **4b Scoped retrieval — `DET`:**
 ```
-45,000 docs → filter by footprint (exact, not semantic) → ~200 → BM25 + embedding → top 15
+64.6k docs → filter by footprint (exact, not semantic) → ~1.0–1.3k → BM25 → top 15
 ```
+Measured at ladder step 1.6 on the East fixture — larger on both ends than the pre-generator
+estimate, and the reduction is *bigger* than claimed, not smaller: >1,000× corpus to
+ranked slice. `sentence-transformers` is implemented behind the `embed` extra (§18); BM25 is
+the default because recall@15 over the authored signal documents measured 1.000 for every
+driver, leaving nothing for an embedding to recover.
 Precision up, input tokens down ~10–15×, hallucination surface shrinks.
 
 **4c Extraction — `LLM #2`:** documents → typed evidence claims, schema-forced, each with
@@ -458,7 +470,7 @@ wall time. Per case: cost per insight, total latency, share of stages with no mo
 | Warehouse / store | **DuckDB** | Real SQL, file-based, no service to run, fast at this scale. One engine for warehouse, ledger and case store. Swap to Snowflake/Databricks is a connector change because every quantitative op is already SQL |
 | Types & validation | **Pydantic v2** | Contract, hypothesis, evidence, verdict — *and* LLM output-schema enforcement, for free |
 | Statistics | **statsmodels + scipy** | STL, change-point, rank correlation, DiD |
-| Retrieval | **rank_bm25 + sentence-transformers (`all-MiniLM-L6-v2`)** | Local, free, offline — no API dependency during the demo. Corpus is ~200 docs post-scoping, so numpy cosine beats any vector service |
+| Retrieval | **rank_bm25 (default) + sentence-transformers `all-MiniLM-L6-v2` behind an `embed` extra** | Local, free, offline — no API dependency during the demo. Measured at ladder step 1.6: BM25 alone reaches recall@15 = 1.000 over the authored signal documents for every driver, so the 2 GB embedding model buys nothing on this corpus and stays opt-in rather than default |
 | API | **FastAPI** | One process |
 | UI | **React + Vite** | Reuses the Round 1 deck's design language. *Fallback: Streamlit if P3 arrives under time pressure* |
 | Tests | **pytest** | Also hosts the ground-truth evaluation harness |
@@ -548,6 +560,7 @@ casefile/
 ├── src/casefile/
 │   ├── models.py                  ← ALL THREE, day 1   ★ the interface contract
 │   ├── contract.py                ← A     KPIContract + validator
+│   ├── metric.py                  ← A     executes a contract's formula/filters/epochs
 │   ├── stats/                     ← A     stl, changepoint, did (+ placebo rank), jaccard, spearman, pvm
 │   ├── data/
 │   │   ├── generator.py           ← A     SCM + ground truth + corruption
@@ -573,7 +586,8 @@ casefile/
 ├── data/
 │   ├── seed.txt                   ← A
 │   ├── ground_truth.json          ← A     ★ pipeline forbidden from reading; tests only
-│   └── corpus/                    ← B     frozen text, committed
+│   └── corpus/authored/           ← B     hand-authored signal/misdirection text, committed
+│                                           (the noise floor regenerates from the seed — §41.2)
 ├── fixtures/                      ← ALL   golden Case objects for parallel work
 └── tests/                         ← ALL   unit + harness + benchmark + security
 ```

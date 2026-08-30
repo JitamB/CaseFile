@@ -348,8 +348,10 @@ the result is *simulated*, not *fabricated*.
 ## Budget
 
 Per case, close path: **3 model calls, ≈14.5k input / 3.7k output tokens.** Small *because*
-of decomposition-scoped retrieval — 45,000 documents filtered to ~200 by footprint (exact,
-not semantic) before BM25 and embeddings rank the top 15.
+of decomposition-scoped retrieval — measured at ladder step 1.6 on the East fixture:
+64.6k documents filtered to ~1.0–1.3k by footprint (exact, not semantic), then BM25 ranks
+the top 15. Recall@15 over the authored evidence documents measured 1.000 for every driver,
+so `sentence-transformers` stays behind an opt-in extra rather than running by default.
 
 | | Target |
 |---|---|
@@ -387,7 +389,7 @@ alert, before the decision.**
 | Store | **DuckDB** | Real SQL, file-based, no service to run. One engine for warehouse, ledger and case store — and because every quantitative op is already SQL, Snowflake/Databricks is a connector swap |
 | Types | **Pydantic v2** | Contract, evidence, verdict — *and* LLM output-schema enforcement, for free |
 | Statistics | **statsmodels + scipy** | STL, PELT change-point, Spearman, DiD |
-| Retrieval | **rank_bm25 + sentence-transformers** | Local, free, offline — no API dependency on the demo path |
+| Retrieval | **rank_bm25 (default), sentence-transformers behind an `embed` extra** | Local, free, offline. Measured recall@15 = 1.000 for BM25 alone, so the embedding stays opt-in |
 | API / UI | **FastAPI · React + Vite** | One process, five screens |
 | LLM | **Provider-agnostic protocol** | Every call schema-enforced; every call returns `Usage`, which is what makes telemetry a measurement |
 
@@ -415,17 +417,19 @@ casefile/
 ├── src/casefile/
 │   ├── models.py       ★ the interface contract every track builds against
 │   ├── contract.py     contract model + validator
+│   ├── metric.py       executes a contract's formula/filters/epochs
 │   ├── stats/          stl · changepoint · did (+ placebo rank) · jaccard · spearman · pvm
 │   ├── data/           generator (SCM + sealed ground truth) · DuckDB loader
 │   ├── engine/         S1 verify … S9 feedback, one module per stage
-│   ├── retrieval/      footprint scoping → BM25 + embeddings
+│   ├── retrieval/      footprint scoping → BM25 (embeddings behind an extra)
 │   ├── llm/            provider protocol, schema enforcement, usage telemetry
 │   ├── orchestrator.py runs S0→S8, writes the Case
 │   └── api/            FastAPI
 ├── ui/                 React + Vite — 5 screens
 ├── data/
 │   ├── ground_truth.json   ★ pipeline forbidden from reading it; tests only
-│   └── corpus/             frozen text, committed
+│   └── corpus/authored/    hand-authored signal/misdirection text, committed
+│                            (the noise floor regenerates from the seed)
 ├── fixtures/           golden Case objects
 ├── tests/              unit · ground-truth harness · benchmark · security
 └── docs/               the canonical project plan
