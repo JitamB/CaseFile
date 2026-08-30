@@ -38,6 +38,11 @@ ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_RAW = ROOT / "data" / "raw"
 DEFAULT_DB = ROOT / "data" / "casefile.duckdb"
 DEFAULT_ALIAS = ROOT / "data" / "account_alias.csv"
+#: §14.1's first filter — "excludes intercompany and test accounts". Which
+#: accounts those are is a business fact the CRM does not record, so it is
+#: committed configuration in the same spirit as the alias map (§15 S0:
+#: "entity-alias map + calendar table. Small, committed, not clever").
+DEFAULT_TEST_ACCOUNTS = ROOT / "data" / "test_accounts.csv"
 
 #: Which CSV becomes which table, and which column carries "when did this land".
 #: `None` means the table has no ingest column of its own — §22 gives billing
@@ -71,11 +76,13 @@ def build(
     raw_dir: Path | str = DEFAULT_RAW,
     db_path: Path | str = DEFAULT_DB,
     alias_path: Path | str = DEFAULT_ALIAS,
+    test_accounts_path: Path | str = DEFAULT_TEST_ACCOUNTS,
 ) -> Path:
     """Load, conform, and record the watermarks. Rebuilds from scratch — the
     database is derived, `*.duckdb` is gitignored, and a loader that appends to
     whatever was there before is a loader nobody can reason about."""
     raw_dir, db_path, alias_path = Path(raw_dir), Path(db_path), Path(alias_path)
+    test_accounts_path = Path(test_accounts_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     db_path.unlink(missing_ok=True)
 
@@ -86,6 +93,7 @@ def build(
 
         _ingest(con, raw_dir, alias_path)
         _conform_accounts(con)
+        _flag_test_accounts(con, test_accounts_path)
         _conform_regions(con)
         _fiscal_calendar(con)
         _watermarks(con)
@@ -117,6 +125,33 @@ def _ingest(con: duckdb.DuckDBPyConnection, raw_dir: Path, alias_path: Path) -> 
         "SELECT * FROM read_csv_auto(?, header = true)",
         [str(alias_path)],
     )
+
+
+def _flag_test_accounts(con: duckdb.DuckDBPyConnection, path: Path) -> None:
+    """Add `crm.account.is_test`, so §14.1's first filter is executable.
+
+    The contract's definition says net revenue *"excludes intercompany and test
+    accounts"*. §22's CRM schema has no column for it — which is realistic, and
+    is why this is a conformance step rather than generator output. Without the
+    column the filter cannot compile, and a `filters` list the metric layer
+    quietly ignores would make §14.1's "executable configuration, not
+    documentation" untrue of the very first element it lists.
+    """
+    con.execute("CREATE TABLE meta.test_account AS SELECT * FROM read_csv_auto(?, header = true)",
+                [str(path)])
+    con.execute("ALTER TABLE crm.account ADD COLUMN is_test BOOLEAN")
+    con.execute(
+        "UPDATE crm.account SET is_test = "
+        "EXISTS (SELECT 1 FROM meta.test_account t WHERE t.account_id = crm.account.account_id)"
+    )
+    flagged = con.execute("SELECT count(*) FROM crm.account WHERE is_test").fetchone()
+    listed = con.execute("SELECT count(*) FROM meta.test_account").fetchone()
+    assert flagged is not None and listed is not None
+    if flagged[0] != listed[0]:
+        raise ValueError(
+            f"{path} names accounts that are not in crm.account — the exclusion list "
+            "is stale, and a filter that silently excludes nothing is not a filter"
+        )
 
 
 # ── Conformance ───────────────────────────────────────────────────────────────
