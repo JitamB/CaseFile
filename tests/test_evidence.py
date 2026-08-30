@@ -18,7 +18,13 @@ import pytest
 
 from casefile.contract import load_all
 from casefile.engine.decompose import decompose
-from casefile.engine.evidence import EvidenceError, gather_probes
+from casefile.engine.evidence import (
+    EvidenceError,
+    ExtractedClaim,
+    ExtractionResponse,
+    extract_claims,
+    gather_probes,
+)
 from casefile.models import (
     AccessRules,
     DataQuality,
@@ -30,6 +36,7 @@ from casefile.models import (
     Materiality,
     RefreshSpec,
     Signature,
+    Usage,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +71,17 @@ def a_hypothesis(driver_id: str) -> Hypothesis:
     return Hypothesis(
         driver_id=driver_id, rationale="test fixture", priority=1,
         expected_signature=Signature(),
+    )
+
+
+def integration_delay_hypothesis() -> Hypothesis:
+    """A rationale that actually retrieves the on-topic authored notes and
+    tickets — `a_hypothesis`'s generic "test fixture" text ranks nothing on
+    the same topic, by design (§18's BM25 is a real ranker, not a stub)."""
+    return Hypothesis(
+        driver_id="integration_delay",
+        rationale="integration issues delaying renewal",
+        priority=1, expected_signature=Signature(),
     )
 
 
@@ -245,6 +263,240 @@ def test_a_probe_with_no_registered_interpreter_raises(
 
 
 # ── lost_reason_scan's denominator is `populated`, not `closed_lost` ──────────
+
+
+# ── 4c · schema-forced extraction, against real retrieved documents ──────────
+
+
+class FakeProvider:
+    """Returns a fixed `ExtractionResponse` regardless of the prompt — the same
+    pattern `test_hypothesise.py` uses to construct exact, malformed, or
+    edge-case model output the guardrail has to handle."""
+
+    def __init__(self, claims: list[ExtractedClaim]) -> None:
+        self._response = ExtractionResponse(claims=claims)
+
+    def complete(self, prompt, schema):  # noqa: ANN001, ANN201
+        assert schema is ExtractionResponse
+        return self._response, Usage(
+            stage=prompt.stage, model="fake", input_tokens=1, output_tokens=1,
+            latency_ms=0.0, cost_inr=0.0,
+        )
+
+
+class RaisingProvider:
+    """Fails the test if the model is ever called — proves a skip really skips
+    the call rather than making it and discarding the result."""
+
+    def complete(self, prompt, schema):  # noqa: ANN001, ANN201
+        raise AssertionError("no model call should have been made")
+
+
+def test_a_real_quote_survives_and_carries_the_driver_it_supports(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    """`northwind-renewal-deferred` is a real, retrieved document on this
+    footprint. The quote is copied verbatim from its actual text."""
+    quote = "their operations team has been raising integration tickets steadily since mid-March"
+    contract = contracts["net_revenue"]
+    provider = FakeProvider(
+        [
+            ExtractedClaim(
+                doc_id="northwind-renewal-deferred",
+                quote=quote,
+                claim="NORTHWIND's own notes tie the stalled renewal to open integration tickets.",
+                supports=True,
+            )
+        ]
+    )
+    items, usages = extract_claims(
+        contract, [integration_delay_hypothesis()], east.footprint, con, provider
+    )
+
+    assert len(items) == 1
+    item = items[0]
+    assert item.outcome == "found"
+    assert item.method == "llm_extraction"
+    assert item.supports == ["integration_delay"]
+    assert item.contradicts == []
+    assert item.quote == quote
+    assert item.source.record_id == "northwind-renewal-deferred"
+    assert len(usages) == 1
+    assert usages[0].stage == "s4c"
+
+
+def test_a_contradicting_claim_lands_in_contradicts_not_supports(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    contract = contracts["net_revenue"]
+    provider = FakeProvider(
+        [
+            ExtractedClaim(
+                doc_id="TKT-000517",
+                quote="Twelfth day of partial exports.",
+                claim="Doesn't actually contradict anything here, just exercising the flag.",
+                supports=False,
+            )
+        ]
+    )
+    items, _usages = extract_claims(
+        contract, [integration_delay_hypothesis()], east.footprint, con, provider
+    )
+
+    assert len(items) == 1
+    assert items[0].supports == []
+    assert items[0].contradicts == ["integration_delay"]
+
+
+def test_a_hallucinated_doc_id_is_dropped(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    """Schema-forced guarantees the shape of the response, not its content —
+    this is the guardrail that checks the content."""
+    contract = contracts["net_revenue"]
+    provider = FakeProvider(
+        [
+            ExtractedClaim(
+                doc_id="does-not-exist-in-the-funnel",
+                quote="anything at all",
+                claim="a claim about a document that was never retrieved",
+                supports=True,
+            )
+        ]
+    )
+    items, _usages = extract_claims(
+        contract, [integration_delay_hypothesis()], east.footprint, con, provider
+    )
+
+    # the one claim was dropped, but documents genuinely were read — checked_absent
+    assert len(items) == 1
+    assert items[0].outcome == "checked_absent"
+    assert items[0].denominator is not None and items[0].denominator > 0
+
+
+def test_a_quote_that_is_not_actually_in_the_document_is_dropped(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    contract = contracts["net_revenue"]
+    provider = FakeProvider(
+        [
+            ExtractedClaim(
+                doc_id="northwind-renewal-deferred",
+                quote="this exact sentence never appears in that document",
+                claim="a fabricated quote",
+                supports=True,
+            )
+        ]
+    )
+    items, _usages = extract_claims(
+        contract, [integration_delay_hypothesis()], east.footprint, con, provider
+    )
+    assert len(items) == 1
+    assert items[0].outcome == "checked_absent"
+
+
+def test_whitespace_around_the_quote_does_not_break_verification(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    """The real text has none of this — a model reproducing it with different
+    line breaks or doubled spaces should not read as a fabrication."""
+    contract = contracts["net_revenue"]
+    provider = FakeProvider(
+        [
+            ExtractedClaim(
+                doc_id="TKT-000517",
+                quote="Twelfth   day  of\npartial exports.",
+                claim="whitespace-mangled but the same real sentence",
+                supports=True,
+            )
+        ]
+    )
+    items, _usages = extract_claims(
+        contract, [integration_delay_hypothesis()], east.footprint, con, provider
+    )
+    assert len(items) == 1
+    assert items[0].outcome == "found"
+
+
+def test_documents_were_read_and_nothing_extracted_is_checked_absent(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    contract = contracts["net_revenue"]
+    provider = FakeProvider([])
+    items, usages = extract_claims(
+        contract, [integration_delay_hypothesis()], east.footprint, con, provider
+    )
+    assert len(items) == 1
+    assert items[0].outcome == "checked_absent"
+    assert items[0].contradicts == ["integration_delay"]
+    assert len(usages) == 1  # the model was still called, just found nothing
+
+
+def test_a_driver_with_no_document_bearing_sources_makes_no_call_at_all(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    """`seasonality`'s only `evidence_sources` entry is `historical_series`,
+    which names no retrievable table — the same reason 4a skips a driver with
+    no `probe_sql`."""
+    contract = contracts["net_revenue"]
+    items, usages = extract_claims(
+        contract, [a_hypothesis("seasonality")], east.footprint, con, RaisingProvider()
+    )
+    assert items == []
+    assert usages == []
+
+
+def test_an_unmodelled_hypothesis_makes_no_call_either(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    contract = contracts["net_revenue"]
+    items, usages = extract_claims(
+        contract, [a_hypothesis("unmodelled")], east.footprint, con, RaisingProvider()
+    )
+    assert items == []
+    assert usages == []
+
+
+def test_no_documents_in_the_funnel_is_uncheckable_without_a_model_call(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    """`supply_delay` genuinely has no on-footprint documents worth ranking
+    above BM25's floor here — real data, not a synthetic empty footprint."""
+    contract = contracts["net_revenue"]
+    items, usages = extract_claims(
+        contract, [a_hypothesis("supply_delay")], east.footprint, con, RaisingProvider()
+    )
+    assert len(items) == 1
+    assert items[0].outcome == "uncheckable"
+    assert items[0].coverage == 0.0
+    assert items[0].supports == ["supply_delay"]
+    assert usages == []
+
+
+def test_extraction_ids_are_unique_across_a_full_pass(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], east
+) -> None:
+    contract = contracts["net_revenue"]
+    provider = FakeProvider(
+        [
+            ExtractedClaim(
+                doc_id="northwind-renewal-deferred",
+                quote="Same pattern as ACME",
+                claim="ties the two accounts together",
+                supports=True,
+            ),
+            ExtractedClaim(
+                doc_id="TKT-000517",
+                quote="Twelfth day of partial exports.",
+                claim="a second, independent claim",
+                supports=True,
+            ),
+        ]
+    )
+    hypotheses = [a_hypothesis(d.id) for d in contract.drivers]
+    items, _usages = extract_claims(contract, hypotheses, east.footprint, con, provider)
+    ids = [i.id for i in items]
+    assert len(ids) == len(set(ids))
 
 
 def test_the_checked_absent_denominator_is_populated_fields_not_all_closed_lost() -> None:

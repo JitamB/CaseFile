@@ -1,8 +1,10 @@
-"""Stage 4a · Gather evidence — probes, counted absence — §15 S4a.
+"""Stage 4 · Gather evidence — §15 S4a and S4c.
 
 *"Going door to door. Run the precise numbers... And write down what you
 didn't find: 'we checked 12 lost-reason fields, none mention a competitor'
 is a real finding."*
+
+## 4a — probes, counted absence
 
 One probe per driver, from `contract.drivers[i].probe_sql` — a SQL template
 under `probes/`. Each probe lands as exactly one of three outcomes, and which
@@ -29,6 +31,30 @@ still has to be findable by `Ledger.for_driver`, or Stage 6 could never tell
 ever ran" — which is the difference between Undetermined and a driver that
 was silently never tested. `outcome` carries the epistemic weight; `supports`
 here means only "this item is about this driver."
+
+## 4c — schema-forced extraction, LLM #2
+
+`retrieval.retrieve` hands back a `Funnel` of documents already scoped to one
+driver's `evidence_sources` and `max_lag_days`. The model reads them and
+proposes claims; **the same three-outcome discipline as 4a applies**, and the
+same rule that outcome is a property of the text, never of which corpus role
+(signal, misdirection, noise) a human author assigned it — the pipeline
+cannot see that tag, and would not be allowed to use it if it could.
+
+Every claim the model proposes is checked in code before it becomes an
+`EvidenceItem`, not merely requested in the prompt: its `doc_id` must name a
+document actually in the funnel, and its `quote` must be an exact, verbatim
+substring of that document's text (whitespace-normalised only). A model that
+invents either is not trusted — the claim is dropped, the same way
+`hypothesise.py`'s guardrail never trusts an invented driver id. `claim`
+itself, the one-sentence gloss on *why* the quote matters, is left as prose —
+unverifiable by construction, like `Hypothesis.rationale`, and never the
+field anything downstream keys off of.
+
+A driver whose `evidence_sources` are entirely structured (§24's
+`seasonality`, whose only source is `historical_series`) is skipped here too,
+for the same reason 4a skips a driver with no `probe_sql`: there is nothing
+document-shaped to retrieve, so there is no call to make.
 """
 
 from __future__ import annotations
@@ -38,8 +64,12 @@ from datetime import date, datetime
 from pathlib import Path
 
 import duckdb
+from pydantic import BaseModel
 
-from casefile.models import Driver, EvidenceItem, Footprint, Hypothesis, KPIContract, Source
+from casefile.llm.base import LLMProvider, Prompt
+from casefile.models import Driver, EvidenceItem, Footprint, Hypothesis, KPIContract, Source, Usage
+from casefile.retrieval import Funnel, retrieve
+from casefile.retrieval.scope import SOURCE_TABLES
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -48,6 +78,14 @@ ROOT = Path(__file__).resolve().parents[3]
 #: above the noise a quiet account's week-to-week count carries on its own.
 SPIKE_RATIO = 1.5
 COMPETITOR_CODES = ("competitor_price", "competitor_features")
+
+#: A single document's assertion, verified only as a real quote — weaker than
+#: a directly measured fact (4a's price-book fact is 0.8) but not negligible.
+DOCUMENT_STRENGTH = 0.6
+#: Documents were retrieved and read; nothing in them bore on the driver. A
+#: softer absence than a complete structured-field scan (4a's 0.6-0.8 range),
+#: since a handful of documents is not the same as a counted, exhaustive field.
+ABSENCE_STRENGTH = 0.5
 
 
 class EvidenceError(ValueError):
@@ -396,3 +434,168 @@ _INTERPRETERS: dict[str, Interpreter] = {
     "lost_reason_scan": _lost_reason_scan,
     "incident_scan": _incident_scan,
 }
+
+
+# ── 4c · Schema-forced extraction ───────────────────────────────────────────
+
+
+class ExtractedClaim(BaseModel):
+    """The model's proposal. `doc_id` and `quote` are verified against the
+    funnel before either is trusted — see `_guardrail`."""
+
+    doc_id: str
+    quote: str
+    claim: str
+    supports: bool
+
+
+class ExtractionResponse(BaseModel):
+    claims: list[ExtractedClaim]
+
+
+def extract_claims(
+    contract: KPIContract,
+    hypotheses: list[Hypothesis],
+    footprint: Footprint,
+    con: duckdb.DuckDBPyConnection,
+    provider: LLMProvider,
+    as_of: datetime | None = None,
+) -> tuple[list[EvidenceItem], list[Usage]]:
+    """Retrieves and extracts for every hypothesis with a document-bearing
+    driver, in hypothesis order. One model call per driver — the funnel each
+    retrieves is scoped to that driver's own `evidence_sources` and
+    `max_lag_days`, so there is no single combined document set to extract
+    from in one call the way 4a has a single registry to annotate in one."""
+    as_of = as_of or _default_as_of(con)
+    items: list[EvidenceItem] = []
+    usages: list[Usage] = []
+    for hypothesis in hypotheses:
+        driver = _driver(contract, hypothesis.driver_id)
+        if driver is None or not _has_documents(driver):
+            continue
+
+        funnel = retrieve(con, footprint, hypothesis.rationale, driver=driver)
+        if not funnel:
+            items.append(_uncheckable(driver, as_of, footprint))
+            continue
+
+        prompt = _prompt(driver, hypothesis, funnel)
+        response, usage = provider.complete(prompt, ExtractionResponse)
+        usages.append(usage)
+
+        claims = _guardrail(response.claims, funnel)
+        if not claims:
+            items.append(_checked_absent(driver, as_of, footprint, len(funnel)))
+            continue
+        items.extend(_items(driver, claims, funnel, as_of, footprint))
+    return items, usages
+
+
+def _has_documents(driver: Driver) -> bool:
+    return any(source in SOURCE_TABLES for source in driver.evidence_sources)
+
+
+def _prompt(driver: Driver, hypothesis: Hypothesis, funnel: Funnel) -> Prompt:
+    system = (
+        "You are reading retrieved documents for evidence about one candidate "
+        "cause of a business KPI movement. For each document that contains a "
+        "passage bearing on this cause — supporting it or contradicting it — "
+        "return one claim: the document's id, a one-sentence paraphrase of why "
+        "the passage matters, whether the passage supports or contradicts the "
+        "cause, and the passage itself, copied character-for-character from "
+        "the document — never summarised, shortened or reworded. A document "
+        "that says nothing about this cause contributes no claim; do not force "
+        "one. Never invent a document id, and never quote text that is not "
+        "actually present in the document below."
+    )
+    listed = "\n\n".join(f"[{doc.doc_id}] {doc.text}" for doc in funnel)
+    user = (
+        f"Candidate cause: {driver.id} — {hypothesis.rationale}\n\n"
+        f"Documents:\n{listed}\n\n"
+        "Return one claim per document that bears on this cause, referencing "
+        "its id, or no claims at all if none do."
+    )
+    return Prompt(stage="s4c", system=system, user=user)
+
+
+def _guardrail(raw: list[ExtractedClaim], funnel: Funnel) -> list[ExtractedClaim]:
+    """'Schema-forced' guarantees the *shape* of the response; it guarantees
+    nothing about its content. This is where the content is checked: a
+    `doc_id` naming no retrieved document, or a `quote` that is not an actual
+    substring of that document's text, is dropped rather than trusted."""
+    by_id = {doc.doc_id: doc for doc in funnel}
+    kept = []
+    for claim in raw:
+        doc = by_id.get(claim.doc_id)
+        if doc is None:
+            continue
+        if _normalise(claim.quote) not in _normalise(doc.text):
+            continue
+        kept.append(claim)
+    return kept
+
+
+def _normalise(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _items(
+    driver: Driver,
+    claims: list[ExtractedClaim],
+    funnel: Funnel,
+    as_of: datetime,
+    footprint: Footprint,
+) -> list[EvidenceItem]:
+    by_id = {doc.doc_id: doc for doc in funnel}
+    freshness = _freshness_hours(as_of, footprint)
+    items: list[EvidenceItem] = []
+    for i, claim in enumerate(claims, start=1):
+        doc = by_id[claim.doc_id]
+        items.append(
+            EvidenceItem(
+                id=f"ev-{driver.id}-doc-{i:03d}",
+                claim=claim.claim,
+                kind="document", outcome="found",
+                source=Source(
+                    system=doc.table.split(".")[0], record_id=doc.doc_id,
+                    timestamp=_ts(doc.when),
+                ),
+                method="llm_extraction",
+                supports=[driver.id] if claim.supports else [],
+                contradicts=[] if claim.supports else [driver.id],
+                strength=DOCUMENT_STRENGTH, freshness_hours=freshness,
+                quote=claim.quote,
+            )
+        )
+    return items
+
+
+def _uncheckable(driver: Driver, as_of: datetime, footprint: Footprint) -> EvidenceItem:
+    sources = ", ".join(driver.evidence_sources)
+    return EvidenceItem(
+        id=f"ev-{driver.id}-doc-000",
+        claim=f"no documents on this footprint's {sources} sources fall inside the lag window",
+        kind="absence", outcome="uncheckable",
+        source=Source(
+            system="corpus", record_id=f"{driver.id}:no_documents",
+            timestamp=_ts(footprint.window_end),
+        ),
+        method="retrieval", supports=[driver.id], strength=0.0,
+        freshness_hours=_freshness_hours(as_of, footprint), coverage=0.0,
+    )
+
+
+def _checked_absent(
+    driver: Driver, as_of: datetime, footprint: Footprint, read: int
+) -> EvidenceItem:
+    return EvidenceItem(
+        id=f"ev-{driver.id}-doc-000",
+        claim=f"{read} retrieved document(s) were read; none bear on {driver.id}",
+        kind="absence", outcome="checked_absent",
+        source=Source(
+            system="corpus", record_id=f"{driver.id}:no_claims_extracted",
+            timestamp=_ts(footprint.window_end),
+        ),
+        method="llm_extraction", contradicts=[driver.id], strength=ABSENCE_STRENGTH,
+        freshness_hours=_freshness_hours(as_of, footprint), denominator=read,
+    )
