@@ -44,6 +44,11 @@ AS_OF = datetime(2026, 5, 1, 6, 0, 0)
 SPAN_START = date(2023, 5, 1)
 SPAN_END = date(2026, 4, 30)
 OPS_START = date(2025, 9, 1)
+#: product_ops runs to the present, not to the period end. Billing and CRM close
+#: with the fiscal month; a ≤15-minute event stream does not stop because the
+#: books did, and stopping it there left the source looking six hours stale
+#: against a fifteen-minute SLA.
+OPS_END = AS_OF.date()
 
 #: §22 volume line. East carries 49 of them — ev-002 counts "across 49 accounts".
 ACCOUNTS_PER_REGION = {"East": 49, "West": 30, "North": 25, "APAC": 16}
@@ -163,7 +168,8 @@ class World:
     """
 
     def __init__(self, seed: int | None = None) -> None:
-        self.rng = random.Random(seed if seed is not None else read_seed())
+        self.seed = seed if seed is not None else read_seed()
+        self.rng = random.Random(self.seed)
         self.accounts = self._build_accounts()
         self.by_id = {a.account_id: a for a in self.accounts}
         self.enterprise = [a for a in self.accounts if a.segment == "enterprise"]
@@ -265,7 +271,7 @@ class World:
         for account in self.accounts:
             treated = self.is_treated(account)
             day = OPS_START
-            while day <= SPAN_END:
+            while day <= OPS_END:
                 rate = account.base_tickets
                 if treated and day >= INTEGRATION_ONSET:
                     rate *= TICKET_MULTIPLIER
@@ -282,7 +288,7 @@ class World:
         series: dict[tuple[str, date], float] = {}
         for account in self.accounts:
             level = account.csat0
-            for month_start in month_range(OPS_START, SPAN_END):
+            for month_start in month_range(OPS_START, OPS_END):
                 # The 7-day lag of §24, read as a window that opens a week
                 # before the month and closes with it.
                 span = day_range(
@@ -295,6 +301,39 @@ class World:
                 level = min(account.csat0, level + 0.08)  # recovers slowly
                 series[(account.account_id, month_start)] = round(level, 3)
         return series
+
+    def stream(self, purpose: str, key: str) -> random.Random:
+        """An independent RNG per entity per purpose.
+
+        One shared stream means every draw depends on how many draws happened
+        before it, so an unrelated change — more days of ticket generation, say —
+        silently reshuffles who churns three functions later. That is how the
+        freshness fix broke scenario A. Keying the stream on the entity makes a
+        decision depend on the entity, which is the only thing it should.
+        """
+        return random.Random(f"{self.seed}:{purpose}:{key}")
+
+    def csat_deficit(self, account: Account, when: date) -> float:
+        month_key = date(when.year, when.month, 1)
+        level = self.csat.get((account.account_id, month_key), account.csat0)
+        return max(0.0, account.csat0 - level)
+
+    def renew_probability(self, account: Account, when: date) -> float:
+        """σ(α − β₂·csat_deficit − β₃·priceΔ − β₄·competitor), §24."""
+        score = (
+            ALPHA_RENEW
+            - BETA_RENEW_CSAT * self.csat_deficit(account, when)
+            - BETA_RENEW_PRICE * self._price_delta(account, when)
+            - BETA_RENEW_COMPETITOR * self._competitor_pressure(account, when)
+        )
+        return 1.0 / (1.0 + math.exp(-score))
+
+    def is_injected_failure(self, account: Account, when: date) -> bool:
+        """The renewal the injected event is defined to have caused."""
+        return (
+            self.is_treated(account)
+            and TREATED_RENEWAL.get(account.account_name) == when
+        )
 
     def _price_delta(self, account: Account, when: date) -> float:
         return PRICING_UPLIFT if account.segment == "enterprise" and when >= PRICING_ONSET else 0.0
@@ -312,6 +351,7 @@ class World:
         renewals: list[Renewal] = []
         for account in self.accounts:
             share = 1.0
+            rng = self.stream("renewal", account.account_id)
             for year in range(SPAN_START.year, SPAN_END.year + 1):
                 due = _safe_date(year, account.renewal_month, account.renewal_day)
                 if not (SPAN_START <= due <= SPAN_END):
@@ -320,19 +360,19 @@ class World:
                     continue
 
                 at_risk = account.arr * share
-                month_key = date(due.year, due.month, 1)
-                csat = self.csat.get((account.account_id, month_key), account.csat0)
-                deficit = max(0.0, account.csat0 - csat)
-                score = (
-                    ALPHA_RENEW
-                    - BETA_RENEW_CSAT * deficit
-                    - BETA_RENEW_PRICE * self._price_delta(account, due)
-                    - BETA_RENEW_COMPETITOR * self._competitor_pressure(account, due)
-                )
-                probability = 1.0 / (1.0 + math.exp(-score))
-                draw = self.rng.random()
+                probability = self.renew_probability(account, due)
+                deficit = self.csat_deficit(account, due)
 
-                if draw < probability:
+                if self.is_injected_failure(account, due):
+                    # §24: "WE CHOOSE THE EXOGENOUS EVENTS." The two treated
+                    # accounts failing is the injection, not a sample from it —
+                    # the model's job is to make that failure *plausible*, and
+                    # `renew_probability` above says 0.004 and 0.04, which it is.
+                    # Sampling it instead made the entire scenario hinge on one
+                    # draw: a change to ticket generation elsewhere reshuffled
+                    # the stream and NORTHWIND quietly renewed.
+                    outcome, kept = "churned", 0.0
+                elif rng.random() < probability:
                     outcome, kept = "renewed", 1.0
                 else:
                     # How a failed renewal fails depends on how bad it got. A
@@ -341,10 +381,10 @@ class World:
                     # flat coin flip made the scenario hinge on a draw rather
                     # than on the cause.
                     severity = min(1.0, deficit / 3.0)
-                    if self.rng.random() < 0.45 + 0.5 * severity:
+                    if rng.random() < 0.45 + 0.5 * severity:
                         outcome, kept = "churned", 0.0
                     else:
-                        outcome, kept = "downgraded", round(self.rng.uniform(0.25, 0.5), 3)
+                        outcome, kept = "downgraded", round(rng.uniform(0.25, 0.5), 3)
 
                 renewals.append(
                     Renewal(
@@ -374,12 +414,13 @@ class World:
         """
         out: list[Expansion] = []
         for account in self.accounts:
+            rng = self.stream("expansion", account.account_id)
             start = max(SPAN_START, account.first_contract_date)
             for month in month_range(start, SPAN_END):
-                if self.rng.random() > EXPANSION_RATE:
+                if rng.random() > EXPANSION_RATE:
                     continue
-                created = _safe_date(month.year, month.month, self.rng.randint(1, 26))
-                close = created + timedelta(days=self.rng.randint(12, 55))
+                created = _safe_date(month.year, month.month, rng.randint(1, 26))
+                close = created + timedelta(days=rng.randint(12, 55))
                 if close > SPAN_END:
                     continue
 
@@ -391,16 +432,16 @@ class World:
                 if account.region == COMPETITOR_REGION and close >= COMPETITOR_ONSET:
                     win *= 0.5
 
-                won = self.rng.random() < win
-                delta = account.arr * self.rng.uniform(0.012, 0.045) if won else 0.0
+                won = rng.random() < win
+                delta = account.arr * rng.uniform(0.012, 0.045) if won else 0.0
                 if won:
                     reason = ""
                 elif account.region == COMPETITOR_REGION and close >= COMPETITOR_ONSET:
-                    reason = self.rng.choice(COMPETITOR_LOST_REASONS)
+                    reason = rng.choice(COMPETITOR_LOST_REASONS)
                 else:
                     # Never a competitor code outside APAC. This is what makes
                     # the East probe *checked-absent* rather than empty (§25).
-                    reason = self.rng.choice(LOST_REASONS)
+                    reason = rng.choice(LOST_REASONS)
 
                 out.append(
                     Expansion(account.account_id, created, close, round(delta, 2), won, reason)
