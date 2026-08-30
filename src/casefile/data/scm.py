@@ -128,6 +128,19 @@ class Account:
     renewal_day: int
     base_tickets: float
     csat0: float
+    #: A handful of accounts were reassigned between regions mid-history. CRM
+    #: overwrites the account's region; billing keeps whatever it stamped on the
+    #: invoice line at the time. The two therefore disagree about the past, which
+    #: is what Stage 0's conformance exists to reconcile — and without it,
+    #: "conform region" would be a step that provably never changes anything.
+    prior_region: str | None = None
+    region_changed_on: date | None = None
+
+    def region_at(self, when: date) -> str:
+        """Billing's view: the region as it stood when the line was written."""
+        if self.prior_region and self.region_changed_on and when < self.region_changed_on:
+            return self.prior_region
+        return self.region
 
 
 @dataclass(frozen=True)
@@ -216,6 +229,18 @@ class World:
                 )
                 arr = self._arr_for(rng, name, segment)
                 first = SPAN_START - timedelta(days=rng.randint(200, 1400))
+                # Reassigned well before the case window, so scenario A's
+                # March-to-April comparison is untouched by it.
+                reassigned = not treated and rng.random() < 0.035
+                prior_region = (
+                    rng.choice([r for r in ACCOUNTS_PER_REGION if r != region])
+                    if reassigned
+                    else None
+                )
+                changed_on = (
+                    date(2024, rng.randint(1, 12), rng.randint(1, 28)) if reassigned else None
+                )
+
                 boundary = TREATED_RENEWAL.get(name)
                 renewal_month = boundary.month if boundary else first.month
                 renewal_day = boundary.day if boundary else min(first.day, 28)
@@ -234,6 +259,8 @@ class World:
                         renewal_day=renewal_day,
                         base_tickets=self._base_tickets(rng, segment),
                         csat0=round(rng.uniform(7.4, 9.1), 2),
+                        prior_region=prior_region,
+                        region_changed_on=changed_on,
                     )
                 )
                 index += 1

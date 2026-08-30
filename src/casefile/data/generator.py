@@ -280,7 +280,8 @@ def _line(
 ) -> list[Any]:
     amount = round(qty * unit, 2)
     return [
-        invoice_id, line_no, when.isoformat(), account.billing_id, product, account.region,
+        invoice_id, line_no, when.isoformat(), account.billing_id, product,
+        account.region_at(when),
         qty, f"{unit:.2f}", f"{amount:.2f}", f"{discount:.2f}", f"{amount - discount:.2f}",
         "INR", int(recurring), account.first_contract_date.isoformat(),
         _safe_month_day(date(when.year + 1, when.month, 1), 28).isoformat(), ingested,
