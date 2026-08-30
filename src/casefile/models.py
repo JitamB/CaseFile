@@ -486,11 +486,21 @@ class Case(Base):
 
 class Persona(Base):
     """Track C populates these from `personas/*.yaml`. Deliberately minimal here:
-    the treaty needs the shape, not C's rendering preferences."""
+    the treaty needs the shape, not C's rendering preferences.
+
+    `region` is the one addition P1 forced, and it is not a preference. §14.1
+    writes `access.row.region.vp_sales: [own_region]`, and *own* is a fact about
+    the viewer that lives nowhere else — without it S8a cannot resolve the rule
+    at all, and a region-scoped persona either sees everything or nothing.
+    Optional and defaulted, so no fixture moves. §30 rule 1 wants all three of us
+    in one sitting for this; nobody else is reachable, so it lands with a
+    `DECISIONS.md` entry and goes on the G1 agenda.
+    """
 
     id: str
     role_key: str
     label: str
+    region: str | None = None
 
 
 ContributionNode.model_rebuild()
