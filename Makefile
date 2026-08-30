@@ -35,13 +35,15 @@ test:
 
 # In ci.yml's order. The two tools/ checks were missing here, which is how a
 # ground-truth violation reached CI at ladder step 0.7 with `make check` green —
-# precisely the divergence §41.3 says outranks every other task.
+# precisely the divergence §41.3 says outranks every other task. The ui job
+# joined ci.yml at 1.9; its two commands join here for the same reason.
 check:
 	python tools/check_ground_truth_isolation.py
 	python tools/check_links.py
 	ruff check src tests
 	mypy src
 	pytest -q
+	cd ui && npm ci && npm test && npm run build
 
 gate0 gate1 gate2 gate3 gate4 gate5 gate6:
 	pytest -m $@ -q

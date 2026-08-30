@@ -51,3 +51,29 @@ jobs:
         env:
           CASEFILE_LLM_REPLAY: "true"
         run: pytest -q
+
+  ui:
+    name: ui
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install
+        working-directory: ui
+        run: npm ci
+
+      - name: Tests
+        working-directory: ui
+        run: npm test
+
+      # Type-checks and builds against fixtures/ at the repo root — see
+      # vite.config.ts's @fixtures alias — so a fixture the screen no longer
+      # matches breaks this job rather than surfacing at G3.
+      - name: Build
+        working-directory: ui
+        run: npm run build

@@ -1,0 +1,27 @@
+/* Minimal, deliberately. §33's D-4 keeps the React/Streamlit call open until
+   end of P2 on measured progress; this ladder step's job is rendering §10
+   correctly, not a visual design pass P3 owns. */
+body {
+  font-family: -apple-system, system-ui, sans-serif;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: #1a1a1a;
+}
+section { margin-bottom: 2rem; }
+h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: #555; }
+.alert { font-size: 1.25rem; font-weight: 600; }
+.contribution-row { display: flex; justify-content: space-between; padding: 0.15rem 0; }
+.confidence { font-size: 1.5rem; font-weight: 700; }
+.confidence-likely { color: #a15c00; }
+.confidence-confirmed { color: #1a7a1a; }
+.confidence-contested, .confidence-undetermined { color: #7a1a1a; }
+.caveat { font-style: italic; color: #555; }
+.attribution { list-style: none; padding: 0; }
+.attribution li { display: flex; gap: 0.75rem; padding: 0.2rem 0; }
+.status { font-size: 0.8rem; padding: 0 0.4rem; border-radius: 3px; background: #eee; }
+.outcome-refute { color: #7a1a1a; }
+.outcome-pass { color: #1a7a1a; }
+.outcome-inconclusive { color: #888; }
+.muted { color: #888; font-style: italic; }
+.assumption { color: #888; font-size: 0.85rem; }
