@@ -180,7 +180,7 @@ A **structural causal model**, not a random-number loop. That distinction is the
 ```
 WE CHOOSE THE EXOGENOUS EVENTS   (sealed in data/ground_truth.json)
 
-  integration_delay   → accounts ACME, NORTHWIND    onset 2026-04-12   ← TRUE CAUSE
+  integration_delay   → accounts ACME, NORTHWIND    onset 2026-03-12   ← TRUE CAUSE
   pricing_change      → all 41 enterprise accounts  onset 2026-03-01   ← decoy
   competitor_launch   → region APAC                 onset 2026-04-20   ← decoy
   seasonality         → all                         continuous         ← background
@@ -190,7 +190,7 @@ PROPAGATION (lagged SCM)
 
   tickets_a(t)    = base_a · (1 + 3.2·1[integration_delay_a, t−ℓ]),  ℓ ~ U(0,3)
   csat_a(t)       = csat_a(t−1) − β₁ · tickets̃_a(t−7)
-  P(renew_a)      = σ(α − β₂·csat_a − β₃·priceΔ_a − β₄·competitor_a),  ℓ ~ U(30,60)
+  P(renew_a)      = σ(α − β₂·csat_a − β₃·priceΔ_a − β₄·competitor_a),  ℓ ~ U(18,30)
   invoice_a(t)    = ARR_a · 1[renew_a]   at contract boundary
 
 RENDER at three grains / three cadences → billing · crm · product_ops
@@ -205,7 +205,7 @@ exactly one test:
 | Decoy | Killed by | Why |
 |---|---|---|
 | `pricing_change` | **Locality** (J = 0.05) | Hit all 41 enterprise accounts; 39 held steady. A cause with a wider footprint than its effect is not the cause |
-| `competitor_launch` | **Locality + Timing** | APAC-only, and starts *after* the East decline began |
+| `competitor_offer` *(the `competitor_launch` event)* | **Locality + Timing** | APAC-only, and starts *after* the East decline began |
 | `integration_delay` | survives Timing, Locality, Control — **fails Dose (n=2)** | Which is why the honest verdict is **Likely, not Confirmed** |
 
 ### Text corpus honesty controls

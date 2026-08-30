@@ -31,7 +31,7 @@ def test_scenario_a_recovers_injected_driver():
     assert set(case.decomposition.footprint.accounts) == set(truth.accounts)
 
     assert case.tests["pricing_change"].locality   == "refute"
-    assert case.tests["competitor_launch"].timing  == "refute"
+    assert case.tests["competitor_offer"].timing    == "refute"
     assert case.tests["integration_delay"].dose    == "inconclusive"   # n = 2
 
     primary = case.verdict.attribution[0]

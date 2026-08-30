@@ -33,7 +33,7 @@ them, not because anyone remembers it.
 | **Visibility** | Public | Round 2 requires it, and CI minutes are free on public repos |
 | **Collaborators** | All three, write access | CODEOWNERS silently ignores anyone without write access |
 | **Branches** | `main` only, plus short-lived work branches | Branches are per *work item*, never per *person*. A personal branch drifts for weeks and merges as one unreviewable lump |
-| **`main` protection** | PR required · 1 approval · both CI jobs green · linear history · rebase-only merge · branch deleted on merge | No direct pushes, including the owner's |
+| **`main` protection** | PR required · 1 approval · both CI jobs green · linear history · rebase-only merge · branch deleted on merge | No direct pushes. **`enforce_admins` is `false` until the other two accept their invites** — until then an admin can bypass, because turning it on with one collaborator freezes the repo |
 | **`.github/`** | `CODEOWNERS`, `pull_request_template.md`, `workflows/ci.yml` | §42–43 — what makes review automatic instead of remembered |
 | **`initials/`** | Gitignored | Earlier drafts, superseded by `docs/`. Nothing in the repository links into it — CI fails on a link to an uncommitted path, so that cannot silently regress |
 
