@@ -498,7 +498,16 @@ def _aggregates(contract: KPIContract) -> set[str]:
 
 
 def _is_additive(contract: KPIContract) -> bool:
-    return _aggregates(contract) <= {"SUM", "COUNT"}
+    """SUM/COUNT aggregates, and no ratio denominator.
+
+    `gross_renewal_rate` is `SUM(arr_renewed) / SUM(arr_up_for_renewal)` — both
+    terms are SUM, so the aggregate check alone says yes. But the metric is a
+    ratio, and comparing one renewal's raw rupees against a movement measured
+    in the ratio's units is the same nonsense the aggregate check exists to
+    catch for a median — a single ₹5 Cr renewal against a −0.6 ratio delta
+    reads as a billion-percent share of nothing.
+    """
+    return _aggregates(contract) <= {"SUM", "COUNT"} and not parse(contract.formula).denominator
 
 
 def _largest_record(

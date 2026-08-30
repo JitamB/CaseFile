@@ -429,6 +429,24 @@ def test_a_median_kpi_has_no_single_record_share(
     assert "MEDIAN" in artefact.detail
 
 
+def test_a_ratio_kpi_also_has_no_single_record_share(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]
+) -> None:
+    """`gross_renewal_rate` is `SUM(arr_renewed) / SUM(arr_up_for_renewal)` —
+    both terms are SUM, so the aggregate check alone says yes, additive. But
+    dividing one renewal's raw rupees by a movement measured in the ratio's
+    own units is the same nonsense the median case above exists to catch, and
+    it produced a billion-percent share before this branch existed. 2024-12
+    carries a real, pre-existing dip — no scenario needed to see it."""
+    result = verify(con, contracts["gross_renewal_rate"], "2024-12", {})
+    artefact = next(c for c in result.checks if c.name == "artefact")
+
+    assert artefact.passed is True
+    assert artefact.statistic is None
+    assert "SUM" in artefact.detail
+    assert "no single record can dominate" in artefact.detail
+
+
 # ── 5 · Materiality and the sparse-history path ──────────────────────────────
 
 
