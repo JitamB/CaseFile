@@ -92,11 +92,11 @@ REFUND_REGION: str = "West"
 #: that was already rising could never be 71% of the movement, it would be more
 #: than 100% of it.
 REFUND_MONTH = date(2026, 3, 1)
-#: West's natural March decline is about ₹27.4 L. `share = C / (C + 2.74)`, so
-#: §25's 71% fixes the credit at ₹67 L and the movement at −₹9.4 L Cr, −4.9%.
+#: West's March declines naturally, and carries an ordinary credit note of its
+#: own; `share = C / (C + rest)`, so §25's 71% fixes the credit at ₹79.9 L.
 #: §11's mock says −11%, which is unreachable at 71% without injecting a real
 #: ₹6 Cr loss and thereby making the case partly real; the mock is corrected.
-REFUND_AMOUNT = 6_700_000.0
+REFUND_AMOUNT = 7_990_000.0
 REFUND_REASON = "refund_batch"
 
 # ── Propagation coefficients ──────────────────────────────────────────────────

@@ -94,7 +94,7 @@
     "D": {
       "account": "ACC-0051",
       "closes_at": "verify",
-      "credit_amount": 6700000.0,
+      "credit_amount": 7990000.0,
       "credit_id": "CN-REFUND-01",
       "description": "Refund batch \u2014 a single credit note is most of the movement.",
       "dimensions": {
