@@ -78,6 +78,27 @@ COMPETITOR_REGION = "APAC"
 
 CASE_PERIOD = (date(2026, 4, 1), date(2026, 4, 30))
 
+# ── Scenario D — the refund batch (§25) ──────────────────────────────────────
+# *"Not-real #1 — refund batch, single credit note = 71% of delta. Closed at
+# Verify, artefact, 0 LLM calls."*
+#
+# West, because no other scenario uses it. One credit note, deliberately large
+# enough to dominate a movement that is otherwise ordinary seasonal drift — so
+# the case is material on both thresholds and still not real. §15 S1's artefact
+# check refutes it on `max_single_record_share: 0.35`.
+REFUND_REGION: str = "West"
+#: March, so the not-real case sits beside the real one in the same digest, and
+#: because West declines naturally that month — a refund batch on top of a month
+#: that was already rising could never be 71% of the movement, it would be more
+#: than 100% of it.
+REFUND_MONTH = date(2026, 3, 1)
+#: West's natural March decline is about ₹27.4 L. `share = C / (C + 2.74)`, so
+#: §25's 71% fixes the credit at ₹67 L and the movement at −₹9.4 L Cr, −4.9%.
+#: §11's mock says −11%, which is unreachable at 71% without injecting a real
+#: ₹6 Cr loss and thereby making the case partly real; the mock is corrected.
+REFUND_AMOUNT = 6_700_000.0
+REFUND_REASON = "refund_batch"
+
 # ── Propagation coefficients ──────────────────────────────────────────────────
 # Chosen so the treated accounts fail their renewal and nobody else does. They
 # are parameters of a stated model, not a nudge applied to the output.
@@ -93,6 +114,26 @@ BETA_RENEW_COMPETITOR = 2.2  # β₄
 #: fourteen accounts churn for no reason across the span and scenario A's
 #: concentration drowns in them.
 ALPHA_RENEW = 5.5
+
+#: Idiosyncratic monthly demand, shared across a region's accounts.
+#:
+#: **Why this exists, and why it is regional rather than per account.** Without
+#: it the aggregate series is very nearly deterministic: 46 accounts x ~1,800
+#: usage lines each averages every per-line wobble away, STL fits the result
+#: exactly, and the residual is numerical dust. §15 S1's materiality gate then
+#: divides a real -₹2.6 Cr movement by a MAD of about zero and reports a robust
+#: z in the millions — a nonsense number on a case file a judge reads.
+#:
+#: It has to be *common* to a region, not per account. Idiosyncratic noise grows
+#: the region's residual as sqrt(n) but grows `sum |delta_i|` as n, so noise
+#: large enough to make robust z meaningful would collapse §25 A's concentration
+#: from 0.91 to about 0.5. A shared shock moves every account together, which
+#: leaves K(2) almost untouched — and is the more realistic mechanism anyway:
+#: market conditions and billable days move a region, not one customer.
+#:
+#: Applied to metered usage only (~20% of billed revenue). Subscriptions are
+#: contractual and do not vary month to month.
+DEMAND_SHOCK_SD = 0.020
 
 #: §24's fourth injected event: seasonality, "all accounts, continuous". It is
 #: background rather than a cause anyone investigates, but a corpus with no
@@ -340,6 +381,23 @@ class World:
         """
         return random.Random(f"{self.seed}:{purpose}:{key}")
 
+    def demand_shock(self, region: str, month: date) -> float:
+        """A region's metered demand this month, as a multiple of normal.
+
+        Its own stream, keyed on region and month, so retuning it cannot
+        reshuffle a renewal decision three functions away — the failure that
+        silently un-churned NORTHWIND at 0.7.
+        """
+        rng = self.stream("demand", f"{region}:{month.isoformat()}")
+        return 1.0 + rng.gauss(0.0, DEMAND_SHOCK_SD)
+
+    def refund_batch_account(self) -> Account:
+        """The account scenario D's credit note lands on: the largest in the
+        refund region, so a ₹46.5 L credit is plausible against its invoice
+        rather than exceeding it."""
+        candidates = [a for a in self.accounts if a.region == REFUND_REGION]
+        return max(candidates, key=lambda a: a.arr)
+
     def csat_deficit(self, account: Account, when: date) -> float:
         month_key = date(when.year, when.month, 1)
         level = self.csat.get((account.account_id, month_key), account.csat0)
@@ -505,6 +563,54 @@ class World:
         not write anything. Keeping the isolation rule's exemption list at a
         single entry is worth a rename.
         """
+        return {
+            "as_of": AS_OF.isoformat(),
+            "scenarios": {
+                "A": self._scenario_a(),
+                "D": self._scenario_d(),
+                "E": self._scenario_e(),
+            },
+        }
+
+    def _scenario_d(self) -> dict[str, object]:
+        """§25 D — not real. One credit note dominates an ordinary movement."""
+        return {
+            "scenario": "D",
+            "description": "Refund batch — a single credit note is most of the movement.",
+            "kpi": "net_revenue",
+            "period": f"{REFUND_MONTH.year:04d}-{REFUND_MONTH.month:02d}",
+            "dimensions": {"region": REFUND_REGION},
+            "true_driver": None,
+            "closes_at": "verify",
+            "failing_check": "artefact",
+            "expected_model_calls": 0,
+            "credit_id": "CN-REFUND-01",
+            "credit_amount": REFUND_AMOUNT,
+            "account": self.refund_batch_account().account_id,
+        }
+
+    def _scenario_e(self) -> dict[str, object]:
+        """§25 E — not real. The formula changed, the business did not.
+
+        No generator input at all: the step is created by the contract's epoch
+        boundary and found by recomputing the boundary period under the adjacent
+        epoch. That is the honest shape of a definition change — it exists in the
+        semantic layer, never in the data.
+        """
+        return {
+            "scenario": "E",
+            "description": "Definition drift — discounts dropped at an epoch boundary.",
+            "kpi": "net_revenue",
+            "period": "2026-02",
+            "dimensions": {"region": "North"},
+            "true_driver": None,
+            "closes_at": "verify",
+            "failing_check": "definition_drift",
+            "expected_model_calls": 0,
+            "epoch_boundary": "2026-02-01",
+        }
+
+    def _scenario_a(self) -> dict[str, object]:
         treated_ids = [a.account_id for a in self.accounts if self.is_treated(a)]
         return {
             "scenario": "A",
@@ -544,7 +650,7 @@ class World:
                 "n = 2 treated accounts, below the n >= 5 minimum for the dose test, "
                 "so Confirmed is unreachable by construction"
             ),
-            "as_of": AS_OF.isoformat(),
+            "closes_at": "adjudicate",
         }
 
 
