@@ -31,7 +31,7 @@ from casefile.orchestrator import run_case
 
 ROOT = Path(__file__).resolve().parents[1]
 
-pytestmark = pytest.mark.gate2
+pytestmark = pytest.mark.gate3
 
 #: The golden fixture's own recorded s3+s4c figures (fixtures/case_east_8pct.json,
 #: §10) — the best available evidence for the two calls this environment cannot

@@ -26,7 +26,7 @@ from casefile.personas import load_all as load_personas
 
 ROOT = Path(__file__).resolve().parents[1]
 
-pytestmark = pytest.mark.gate2
+pytestmark = pytest.mark.gate3
 
 
 class FakeProvider:

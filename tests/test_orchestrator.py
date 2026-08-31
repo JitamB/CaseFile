@@ -24,7 +24,7 @@ from casefile.orchestrator import run_case
 
 ROOT = Path(__file__).resolve().parents[1]
 
-pytestmark = pytest.mark.gate2
+pytestmark = pytest.mark.gate3
 
 
 @pytest.fixture(scope="module")
