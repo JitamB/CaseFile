@@ -24,6 +24,9 @@ import pytest
 from pydantic import ValidationError
 
 from casefile.contract import load_all as load_contracts
+from casefile.engine.adjudicate import adjudicate
+from casefile.engine.challenge import challenge
+from casefile.engine.decompose import decompose
 from casefile.engine.entitle import (
     AccountFacts,
     EntitledCase,
@@ -31,7 +34,11 @@ from casefile.engine.entitle import (
     band,
     entitle,
 )
-from casefile.models import Case, KPIContract, Persona
+from casefile.engine.evidence import gather_probes
+from casefile.engine.recommend import recommend
+from casefile.engine.verify import verify
+from casefile.metric import value
+from casefile.models import Case, Hypothesis, KPIContract, Persona, Signature, Telemetry, Trigger
 from casefile.personas import load_all as load_personas
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -419,3 +426,116 @@ def test_the_ledger_is_rebuilt_rather_than_mutated(
     assert view.case.ledger[1].id == case.ledger[1].id
     with pytest.raises(ValidationError):
         view.case.ledger[1].claim = "anything"  # type: ignore[misc]
+
+
+# ── §25 F, real: Support Lead opens case A ──────────────────────────────────
+#
+# Everything above runs against `fixtures/case_east_8pct.json` — the hand-
+# written golden object, illustrative rather than generated. Scenario F's own
+# text is "Support Lead opens case A", and case A only exists for real once
+# S3 through S7 do — so this is entitle.py's first exercise against a Case
+# built by the actual pipeline, not typed by hand.
+
+
+@pytest.fixture(scope="module")
+def con(warehouse: Path) -> duckdb.DuckDBPyConnection:
+    connection = duckdb.connect(str(warehouse), read_only=True)
+    yield connection
+    connection.close()
+
+
+def _a_hypothesis(driver_id: str) -> Hypothesis:
+    return Hypothesis(
+        driver_id=driver_id, rationale="test fixture", priority=1,
+        expected_signature=Signature(),
+    )
+
+
+@pytest.fixture(scope="module")
+def real_case(con: duckdb.DuckDBPyConnection, contract: KPIContract) -> Case:
+    """Scenario A, S1 through S7, against generated data — the real case
+    Support Lead opens, not a stand-in for it."""
+    period, dimensions = "2026-04", {"region": "East"}
+    result = verify(con, contract, period, dimensions)
+    assert result.passed
+    tree = decompose(con, contract, period, dimensions)
+    hypotheses = [_a_hypothesis(d.id) for d in contract.drivers]
+    ledger = gather_probes(contract, hypotheses, tree.footprint, con)
+    matrices, challenge_items = challenge(contract, hypotheses, tree, con)
+    ledger += challenge_items
+    verdict, question, priority = adjudicate(
+        contract, hypotheses, tree, ledger, matrices, result
+    )
+    recommendation = recommend(contract, verdict, tree, dimensions)
+
+    previous = value(con, contract, "2026-03", dimensions)
+    delta_relative = tree.total_delta / previous if previous else 0.0
+    trigger = Trigger(
+        kpi=contract.id, period=period, dimensions=dimensions,
+        delta=tree.total_delta, delta_relative=delta_relative,
+    )
+    return Case(
+        id="case-2026-04-net_revenue-east", trigger=trigger, verification=result,
+        decomposition=tree, hypotheses=hypotheses, ledger=ledger, tests=matrices,
+        verdict=verdict, recommendation=recommendation, open_question=question,
+        priority=priority, telemetry=Telemetry(),
+    )
+
+
+@pytest.mark.gate2
+def test_the_support_lead_sees_the_case_but_not_the_enterprise_accounts(
+    real_case: Case,
+    personas: dict[str, Persona],
+    contract: KPIContract,
+    accounts: dict[str, AccountFacts],
+) -> None:
+    """§25 F, exactly: the row filter admits East. The domain filter is a
+    segment rule, not a footprint one — it withholds *every* enterprise
+    account in the decomposition, not only the two carrying the movement —
+    so the expected count is measured from the real tree, not assumed."""
+    before = real_case.decomposition.by_dimension["account"]  # type: ignore[union-attr]
+    enterprise = {n.key for n in before if accounts[n.key].segment == "enterprise"}
+    assert {"ACC-0001", "ACC-0002"} <= enterprise  # scenario A's own two accounts
+
+    view = entitle(real_case, personas["support_lead_east"], contract, accounts)
+
+    account_nodes = view.case.decomposition.by_dimension["account"]  # type: ignore[union-attr]
+    assert not any(n.key in enterprise for n in account_nodes)
+    marker = next(n for n in account_nodes if "restricted" in n.key)
+    assert marker.key == f"{len(enterprise)} accounts (segment restricted)"
+
+    footprint_ids = view.case.decomposition.footprint.entities["account_id"]  # type: ignore[union-attr]
+    assert footprint_ids == [marker.key]
+
+
+@pytest.mark.gate2
+def test_the_support_lead_gets_hashed_names_and_banded_amounts_on_real_data(
+    real_case: Case,
+    personas: dict[str, Persona],
+    contract: KPIContract,
+    accounts: dict[str, AccountFacts],
+) -> None:
+    view = entitle(real_case, personas["support_lead_east"], contract, accounts)
+
+    for name in ("ACME", "NORTHWIND"):
+        assert name not in json.dumps(view.payload)
+    for item in view.case.ledger:
+        assert "ACME" not in item.claim
+        assert "NORTHWIND" not in item.claim
+
+    assert isinstance(view.payload["priority"], str)
+    assert "₹" in view.payload["priority"]
+
+
+@pytest.mark.gate2
+def test_the_redaction_is_stated_on_the_page_for_the_real_case(
+    real_case: Case,
+    personas: dict[str, Persona],
+    contract: KPIContract,
+    accounts: dict[str, AccountFacts],
+) -> None:
+    view = entitle(real_case, personas["support_lead_east"], contract, accounts)
+    assert {r.surface for r in view.redactions} == {"domain", "column"}
+    assert "accounts withheld (segment outside this view)" in view.statement
+    assert "hashed" in view.statement
+    assert "banded" in view.statement
