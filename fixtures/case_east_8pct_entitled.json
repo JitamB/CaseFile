@@ -1,0 +1,2440 @@
+{
+  "analyst_east": {
+    "payload": {
+      "decomposition": {
+        "by_dimension": {
+          "account": [
+            {
+              "children": [],
+              "delta": -13000000.0,
+              "dimension": "account",
+              "key": "ACME",
+              "share": 0.5416666666666666
+            },
+            {
+              "children": [],
+              "delta": -8000000.0,
+              "dimension": "account",
+              "key": "NORTHWIND",
+              "share": 0.3333333333333333
+            },
+            {
+              "children": [],
+              "delta": -3000000.0,
+              "dimension": "account",
+              "key": "others",
+              "share": 0.125
+            }
+          ],
+          "kpi": [
+            {
+              "children": [],
+              "delta": -21000000.0,
+              "dimension": "kpi",
+              "key": "gross_renewal_rate",
+              "share": 0.875
+            },
+            {
+              "children": [],
+              "delta": -2000000.0,
+              "dimension": "kpi",
+              "key": "expansion_arr",
+              "share": 0.08333333333333333
+            },
+            {
+              "children": [],
+              "delta": -1000000.0,
+              "dimension": "kpi",
+              "key": "new_business_arr",
+              "share": 0.041666666666666664
+            }
+          ]
+        },
+        "footprint": {
+          "delta": -21000000.0,
+          "entities": {
+            "account_id": [
+              "ACME",
+              "NORTHWIND"
+            ]
+          },
+          "window_end": "2026-04-30",
+          "window_start": "2026-03-01"
+        },
+        "hhi": 0.4201388888888889,
+        "kpi": "net_revenue",
+        "period": "2026-04",
+        "pvm": {
+          "mix": -1000000.0,
+          "price": -2000000.0,
+          "volume": -21000000.0
+        },
+        "total_delta": -24000000.0
+      },
+      "hypotheses": [
+        {
+          "driver_id": "integration_delay",
+          "expected_signature": {
+            "control": "matched enterprise accounts without the delay renewed normally",
+            "dose": "accounts with more integration tickets churn harder",
+            "locality": "confined to the two footprint accounts",
+            "timing": "ticket spike precedes the renewal decision by 14-45 days"
+          },
+          "priority": 1,
+          "rationale": "Both footprint accounts opened integration tickets in the weeks before their renewal dates."
+        },
+        {
+          "driver_id": "pricing_change",
+          "expected_signature": {
+            "control": "segments on the old price book held steady",
+            "dose": "larger price deltas produce larger revenue loss",
+            "locality": "every account exposed to the new price book",
+            "timing": "price effective date precedes the renewal window"
+          },
+          "priority": 2,
+          "rationale": "A list-price increase took effect on 2026-03-01 across the enterprise segment."
+        },
+        {
+          "driver_id": "competitor_offer",
+          "expected_signature": {
+            "control": "unexposed regions held steady",
+            "dose": null,
+            "locality": "accounts in the targeted region",
+            "timing": "launch precedes the decline"
+          },
+          "priority": 3,
+          "rationale": "A competitor launched a promotion during the quarter."
+        }
+      ],
+      "id": "case-2026-04-net_revenue-east",
+      "ledger": [
+        {
+          "claim": "Net revenue for East fell 24,000,000 INR month on month, of which 21,000,000 sits in gross renewals.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-001",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "ACME and NORTHWIND account for 87.5% of the absolute movement across 49 accounts.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-002",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east/by_account",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "Integration ticket volume on ACME and NORTHWIND rose 3.2x against their own 12-month baseline, starting 2026-04-12.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-003",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.ticket_spike/2026-04/acme+northwind",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.9,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The ACME renewal call notes record the integration backlog as the reason for deferring signature.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 26.0,
+          "id": "ev-004",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "We're holding the signature until the integration backlog is cleared \u2014 that's the one blocker on our side.",
+          "source": {
+            "record_id": "opportunity_note/9f21c4",
+            "system": "crm",
+            "timestamp": "2026-04-28T11:32:00Z",
+            "url": null
+          },
+          "strength": 0.7,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The 2026-03-01 price increase applied to 41 enterprise accounts; 39 of them renewed on schedule.",
+          "contradicts": [
+            "pricing_change"
+          ],
+          "coverage": 1.0,
+          "denominator": 41,
+          "freshness_hours": 4.0,
+          "id": "ev-005",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.price_delta/2026-03",
+            "system": "billing",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.95,
+          "supports": []
+        },
+        {
+          "claim": "0 of 12 populated lost-reason fields on the footprint accounts and their peers name a competitor.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": 1.0,
+          "denominator": 12,
+          "freshness_hours": 26.0,
+          "id": "ev-006",
+          "kind": "absence",
+          "method": "sql",
+          "outcome": "checked_absent",
+          "quote": null,
+          "source": {
+            "record_id": "probe.lost_reason_scan/2026-03-01..2026-04-30",
+            "system": "crm",
+            "timestamp": "2026-05-01T01:56:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": []
+        },
+        {
+          "claim": "The competitor promotion covered APAC only, and its first news mention is dated 2026-04-20 \u2014 after the East decline began.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-007",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "The promotional pricing is available exclusively to customers in the APAC region through the end of Q2.",
+          "source": {
+            "record_id": "news_item/1183",
+            "system": "product_ops",
+            "timestamp": "2026-04-20T06:00:00Z",
+            "url": null
+          },
+          "strength": 0.85,
+          "supports": []
+        },
+        {
+          "claim": "Difference-in-differences against 6 matched enterprise accounts gives -9,000,000 INR; the real effect is more extreme than all 6 placebo assignments.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-008",
+          "kind": "statistic",
+          "method": "did",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.did/2026-04/acme+northwind",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "Only 2 accounts carry the integration delay, so the dose-response rank correlation cannot be computed at the n >= 5 minimum.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": 2,
+          "freshness_hours": 0.2,
+          "id": "ev-009",
+          "kind": "fact",
+          "method": "stat_test",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.spearman/2026-04/integration_delay",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        }
+      ],
+      "open_question": {
+        "hypotheses_separated": [
+          "integration_delay"
+        ],
+        "owner_role": "vp_sales",
+        "question": "Did the integration delay influence the renewal decision? Ask the ACME and NORTHWIND account owners.",
+        "value_at_stake": 21000000.0
+      },
+      "priority": 16800000.0,
+      "recommendation": {
+        "action": "Prioritise the integration fix and contact both accounts this week.",
+        "confidence": "likely",
+        "driver_id": "integration_delay",
+        "expected_impact": [
+          18000000.0,
+          24000000.0
+        ],
+        "lever": "prioritise_integration_fix",
+        "monitoring": "renewal_rate, East, weekly; escalate if not recovered within 2 cycles",
+        "owner_role": "vp_sales"
+      },
+      "telemetry": {
+        "calls": [
+          {
+            "cache_hit": false,
+            "cost_inr": 2.1,
+            "input_tokens": 3200,
+            "latency_ms": 1400.0,
+            "model": "claude-sonnet",
+            "output_tokens": 700,
+            "stage": "s3"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 4.6,
+            "input_tokens": 9100,
+            "latency_ms": 3100.0,
+            "model": "claude-sonnet",
+            "output_tokens": 2200,
+            "stage": "s4c"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 1.4,
+            "input_tokens": 2200,
+            "latency_ms": 1500.0,
+            "model": "claude-sonnet",
+            "output_tokens": 800,
+            "stage": "s8b"
+          }
+        ],
+        "stages": [
+          {
+            "stage": "s0",
+            "used_model": false,
+            "wall_ms": 120.0
+          },
+          {
+            "stage": "s1",
+            "used_model": false,
+            "wall_ms": 340.0
+          },
+          {
+            "stage": "s2",
+            "used_model": false,
+            "wall_ms": 410.0
+          },
+          {
+            "stage": "s3",
+            "used_model": true,
+            "wall_ms": 1400.0
+          },
+          {
+            "stage": "s4",
+            "used_model": true,
+            "wall_ms": 3950.0
+          },
+          {
+            "stage": "s5",
+            "used_model": false,
+            "wall_ms": 380.0
+          },
+          {
+            "stage": "s6",
+            "used_model": false,
+            "wall_ms": 45.0
+          },
+          {
+            "stage": "s7",
+            "used_model": false,
+            "wall_ms": 25.0
+          },
+          {
+            "stage": "s8a",
+            "used_model": false,
+            "wall_ms": 15.0
+          },
+          {
+            "stage": "s8b",
+            "used_model": true,
+            "wall_ms": 1500.0
+          },
+          {
+            "stage": "s9",
+            "used_model": false,
+            "wall_ms": 5.0
+          },
+          {
+            "stage": "s10",
+            "used_model": false,
+            "wall_ms": 10.0
+          }
+        ]
+      },
+      "tests": {
+        "competitor_offer": {
+          "control": {
+            "detail": "no matched control group is exposed to the promotion within the footprint",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "dose": {
+            "detail": "no exposure gradient available for accounts outside the promoted region",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "promotion covered APAC only; Jaccard 0.0 against the East footprint",
+            "evidence_ids": [
+              "ev-007",
+              "ev-006"
+            ],
+            "outcome": "refute",
+            "statistic": 0.0
+          },
+          "timing": {
+            "detail": "first mention 2026-04-20, after the East decline had begun",
+            "evidence_ids": [
+              "ev-007"
+            ],
+            "outcome": "refute",
+            "statistic": -19.0
+          }
+        },
+        "integration_delay": {
+          "control": {
+            "detail": "DiD -9,000,000 INR; the real effect is rank 1 of 7 against 6 placebo assignments",
+            "evidence_ids": [
+              "ev-008"
+            ],
+            "outcome": "pass",
+            "statistic": -9000000.0
+          },
+          "dose": {
+            "detail": "n = 2 treated accounts, below the n >= 5 minimum for Spearman \u2014 the test cannot pass here, which is why the verdict cannot be Confirmed",
+            "evidence_ids": [
+              "ev-009"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the cause footprint and the effect footprint are the same two accounts",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 1.0
+          },
+          "timing": {
+            "detail": "ticket onset precedes each renewal decision by 21 and 23 days, inside the 45-day maximum lag",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 22.0
+          }
+        },
+        "pricing_change": {
+          "control": {
+            "detail": "exposed accounts outside the footprint moved with the unexposed control group",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.04
+          },
+          "dose": {
+            "detail": "not decisive: price delta was uniform across the exposed accounts, so there is no gradient to correlate",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the price change hit 41 accounts and 39 held steady; Jaccard 0.05 against the effect footprint. A cause with a wider footprint than its effect is not the cause",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.05
+          },
+          "timing": {
+            "detail": "price effective 2026-03-01, ahead of both renewal dates",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "pass",
+            "statistic": 42.0
+          }
+        }
+      },
+      "trigger": {
+        "delta": -24000000.0,
+        "delta_relative": -0.08,
+        "dimensions": {
+          "region": "East"
+        },
+        "kpi": "net_revenue",
+        "period": "2026-04"
+      },
+      "verdict": {
+        "attribution": [
+          {
+            "driver_id": "integration_delay",
+            "eliminated_by": null,
+            "share": 0.875,
+            "status": "primary"
+          },
+          {
+            "driver_id": "pricing_change",
+            "eliminated_by": null,
+            "share": 0.08333333333333333,
+            "status": "minor"
+          },
+          {
+            "driver_id": "mix",
+            "eliminated_by": null,
+            "share": 0.041666666666666664,
+            "status": "minor"
+          },
+          {
+            "driver_id": "competitor_offer",
+            "eliminated_by": "locality",
+            "share": null,
+            "status": "eliminated"
+          }
+        ],
+        "confidence": "likely"
+      },
+      "verification": {
+        "baseline": "own",
+        "checks": [
+          {
+            "detail": "billing watermark 4h old against a 26h SLA",
+            "name": "freshness",
+            "passed": true,
+            "statistic": 4.0
+          },
+          {
+            "detail": "invoice-line count within 1% of the 28-day weekday median; vintage stable",
+            "name": "completeness",
+            "passed": true,
+            "statistic": 0.99
+          },
+          {
+            "detail": "boundary period recomputed under the 2025-11-01 epoch; the step survives, so it is business, not drift",
+            "name": "definition_drift",
+            "passed": true,
+            "statistic": null
+          },
+          {
+            "detail": "largest single invoice is 9% of the movement, under the 35% single-record threshold; no refund batch, no period-boundary slippage",
+            "name": "artefact",
+            "passed": true,
+            "statistic": 0.09
+          },
+          {
+            "detail": "robust z = -3.8 persisted 2 periods; 2.4 Cr clears both the 3% relative and 25 L absolute thresholds",
+            "name": "materiality",
+            "passed": true,
+            "statistic": -3.8
+          }
+        ],
+        "confidence_ceiling": null,
+        "freshness_hours": 4.0,
+        "passed": true,
+        "persistence": 2,
+        "provisional": false,
+        "robust_z": -3.8
+      }
+    },
+    "persona": {
+      "id": "analyst_east",
+      "label": "Revenue Analyst, East",
+      "region": "East",
+      "role_key": "analyst"
+    },
+    "redactions": [],
+    "statement": "No redactions: this view is complete."
+  },
+  "cfo": {
+    "payload": {
+      "decomposition": {
+        "by_dimension": {
+          "account": [
+            {
+              "children": [],
+              "delta": -13000000.0,
+              "dimension": "account",
+              "key": "ACME",
+              "share": 0.5416666666666666
+            },
+            {
+              "children": [],
+              "delta": -8000000.0,
+              "dimension": "account",
+              "key": "NORTHWIND",
+              "share": 0.3333333333333333
+            },
+            {
+              "children": [],
+              "delta": -3000000.0,
+              "dimension": "account",
+              "key": "others",
+              "share": 0.125
+            }
+          ],
+          "kpi": [
+            {
+              "children": [],
+              "delta": -21000000.0,
+              "dimension": "kpi",
+              "key": "gross_renewal_rate",
+              "share": 0.875
+            },
+            {
+              "children": [],
+              "delta": -2000000.0,
+              "dimension": "kpi",
+              "key": "expansion_arr",
+              "share": 0.08333333333333333
+            },
+            {
+              "children": [],
+              "delta": -1000000.0,
+              "dimension": "kpi",
+              "key": "new_business_arr",
+              "share": 0.041666666666666664
+            }
+          ]
+        },
+        "footprint": {
+          "delta": -21000000.0,
+          "entities": {
+            "account_id": [
+              "ACME",
+              "NORTHWIND"
+            ]
+          },
+          "window_end": "2026-04-30",
+          "window_start": "2026-03-01"
+        },
+        "hhi": 0.4201388888888889,
+        "kpi": "net_revenue",
+        "period": "2026-04",
+        "pvm": {
+          "mix": -1000000.0,
+          "price": -2000000.0,
+          "volume": -21000000.0
+        },
+        "total_delta": -24000000.0
+      },
+      "hypotheses": [
+        {
+          "driver_id": "integration_delay",
+          "expected_signature": {
+            "control": "matched enterprise accounts without the delay renewed normally",
+            "dose": "accounts with more integration tickets churn harder",
+            "locality": "confined to the two footprint accounts",
+            "timing": "ticket spike precedes the renewal decision by 14-45 days"
+          },
+          "priority": 1,
+          "rationale": "Both footprint accounts opened integration tickets in the weeks before their renewal dates."
+        },
+        {
+          "driver_id": "pricing_change",
+          "expected_signature": {
+            "control": "segments on the old price book held steady",
+            "dose": "larger price deltas produce larger revenue loss",
+            "locality": "every account exposed to the new price book",
+            "timing": "price effective date precedes the renewal window"
+          },
+          "priority": 2,
+          "rationale": "A list-price increase took effect on 2026-03-01 across the enterprise segment."
+        },
+        {
+          "driver_id": "competitor_offer",
+          "expected_signature": {
+            "control": "unexposed regions held steady",
+            "dose": null,
+            "locality": "accounts in the targeted region",
+            "timing": "launch precedes the decline"
+          },
+          "priority": 3,
+          "rationale": "A competitor launched a promotion during the quarter."
+        }
+      ],
+      "id": "case-2026-04-net_revenue-east",
+      "ledger": [
+        {
+          "claim": "Net revenue for East fell 24,000,000 INR month on month, of which 21,000,000 sits in gross renewals.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-001",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "ACME and NORTHWIND account for 87.5% of the absolute movement across 49 accounts.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-002",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east/by_account",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "Integration ticket volume on ACME and NORTHWIND rose 3.2x against their own 12-month baseline, starting 2026-04-12.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-003",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.ticket_spike/2026-04/acme+northwind",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.9,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The ACME renewal call notes record the integration backlog as the reason for deferring signature.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 26.0,
+          "id": "ev-004",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "We're holding the signature until the integration backlog is cleared \u2014 that's the one blocker on our side.",
+          "source": {
+            "record_id": "opportunity_note/9f21c4",
+            "system": "crm",
+            "timestamp": "2026-04-28T11:32:00Z",
+            "url": null
+          },
+          "strength": 0.7,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The 2026-03-01 price increase applied to 41 enterprise accounts; 39 of them renewed on schedule.",
+          "contradicts": [
+            "pricing_change"
+          ],
+          "coverage": 1.0,
+          "denominator": 41,
+          "freshness_hours": 4.0,
+          "id": "ev-005",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.price_delta/2026-03",
+            "system": "billing",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.95,
+          "supports": []
+        },
+        {
+          "claim": "0 of 12 populated lost-reason fields on the footprint accounts and their peers name a competitor.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": 1.0,
+          "denominator": 12,
+          "freshness_hours": 26.0,
+          "id": "ev-006",
+          "kind": "absence",
+          "method": "sql",
+          "outcome": "checked_absent",
+          "quote": null,
+          "source": {
+            "record_id": "probe.lost_reason_scan/2026-03-01..2026-04-30",
+            "system": "crm",
+            "timestamp": "2026-05-01T01:56:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": []
+        },
+        {
+          "claim": "The competitor promotion covered APAC only, and its first news mention is dated 2026-04-20 \u2014 after the East decline began.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-007",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "The promotional pricing is available exclusively to customers in the APAC region through the end of Q2.",
+          "source": {
+            "record_id": "news_item/1183",
+            "system": "product_ops",
+            "timestamp": "2026-04-20T06:00:00Z",
+            "url": null
+          },
+          "strength": 0.85,
+          "supports": []
+        },
+        {
+          "claim": "Difference-in-differences against 6 matched enterprise accounts gives -9,000,000 INR; the real effect is more extreme than all 6 placebo assignments.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-008",
+          "kind": "statistic",
+          "method": "did",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.did/2026-04/acme+northwind",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "Only 2 accounts carry the integration delay, so the dose-response rank correlation cannot be computed at the n >= 5 minimum.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": 2,
+          "freshness_hours": 0.2,
+          "id": "ev-009",
+          "kind": "fact",
+          "method": "stat_test",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.spearman/2026-04/integration_delay",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        }
+      ],
+      "open_question": {
+        "hypotheses_separated": [
+          "integration_delay"
+        ],
+        "owner_role": "vp_sales",
+        "question": "Did the integration delay influence the renewal decision? Ask the ACME and NORTHWIND account owners.",
+        "value_at_stake": 21000000.0
+      },
+      "priority": 16800000.0,
+      "recommendation": {
+        "action": "Prioritise the integration fix and contact both accounts this week.",
+        "confidence": "likely",
+        "driver_id": "integration_delay",
+        "expected_impact": [
+          18000000.0,
+          24000000.0
+        ],
+        "lever": "prioritise_integration_fix",
+        "monitoring": "renewal_rate, East, weekly; escalate if not recovered within 2 cycles",
+        "owner_role": "vp_sales"
+      },
+      "telemetry": {
+        "calls": [
+          {
+            "cache_hit": false,
+            "cost_inr": 2.1,
+            "input_tokens": 3200,
+            "latency_ms": 1400.0,
+            "model": "claude-sonnet",
+            "output_tokens": 700,
+            "stage": "s3"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 4.6,
+            "input_tokens": 9100,
+            "latency_ms": 3100.0,
+            "model": "claude-sonnet",
+            "output_tokens": 2200,
+            "stage": "s4c"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 1.4,
+            "input_tokens": 2200,
+            "latency_ms": 1500.0,
+            "model": "claude-sonnet",
+            "output_tokens": 800,
+            "stage": "s8b"
+          }
+        ],
+        "stages": [
+          {
+            "stage": "s0",
+            "used_model": false,
+            "wall_ms": 120.0
+          },
+          {
+            "stage": "s1",
+            "used_model": false,
+            "wall_ms": 340.0
+          },
+          {
+            "stage": "s2",
+            "used_model": false,
+            "wall_ms": 410.0
+          },
+          {
+            "stage": "s3",
+            "used_model": true,
+            "wall_ms": 1400.0
+          },
+          {
+            "stage": "s4",
+            "used_model": true,
+            "wall_ms": 3950.0
+          },
+          {
+            "stage": "s5",
+            "used_model": false,
+            "wall_ms": 380.0
+          },
+          {
+            "stage": "s6",
+            "used_model": false,
+            "wall_ms": 45.0
+          },
+          {
+            "stage": "s7",
+            "used_model": false,
+            "wall_ms": 25.0
+          },
+          {
+            "stage": "s8a",
+            "used_model": false,
+            "wall_ms": 15.0
+          },
+          {
+            "stage": "s8b",
+            "used_model": true,
+            "wall_ms": 1500.0
+          },
+          {
+            "stage": "s9",
+            "used_model": false,
+            "wall_ms": 5.0
+          },
+          {
+            "stage": "s10",
+            "used_model": false,
+            "wall_ms": 10.0
+          }
+        ]
+      },
+      "tests": {
+        "competitor_offer": {
+          "control": {
+            "detail": "no matched control group is exposed to the promotion within the footprint",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "dose": {
+            "detail": "no exposure gradient available for accounts outside the promoted region",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "promotion covered APAC only; Jaccard 0.0 against the East footprint",
+            "evidence_ids": [
+              "ev-007",
+              "ev-006"
+            ],
+            "outcome": "refute",
+            "statistic": 0.0
+          },
+          "timing": {
+            "detail": "first mention 2026-04-20, after the East decline had begun",
+            "evidence_ids": [
+              "ev-007"
+            ],
+            "outcome": "refute",
+            "statistic": -19.0
+          }
+        },
+        "integration_delay": {
+          "control": {
+            "detail": "DiD -9,000,000 INR; the real effect is rank 1 of 7 against 6 placebo assignments",
+            "evidence_ids": [
+              "ev-008"
+            ],
+            "outcome": "pass",
+            "statistic": -9000000.0
+          },
+          "dose": {
+            "detail": "n = 2 treated accounts, below the n >= 5 minimum for Spearman \u2014 the test cannot pass here, which is why the verdict cannot be Confirmed",
+            "evidence_ids": [
+              "ev-009"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the cause footprint and the effect footprint are the same two accounts",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 1.0
+          },
+          "timing": {
+            "detail": "ticket onset precedes each renewal decision by 21 and 23 days, inside the 45-day maximum lag",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 22.0
+          }
+        },
+        "pricing_change": {
+          "control": {
+            "detail": "exposed accounts outside the footprint moved with the unexposed control group",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.04
+          },
+          "dose": {
+            "detail": "not decisive: price delta was uniform across the exposed accounts, so there is no gradient to correlate",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the price change hit 41 accounts and 39 held steady; Jaccard 0.05 against the effect footprint. A cause with a wider footprint than its effect is not the cause",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.05
+          },
+          "timing": {
+            "detail": "price effective 2026-03-01, ahead of both renewal dates",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "pass",
+            "statistic": 42.0
+          }
+        }
+      },
+      "trigger": {
+        "delta": -24000000.0,
+        "delta_relative": -0.08,
+        "dimensions": {
+          "region": "East"
+        },
+        "kpi": "net_revenue",
+        "period": "2026-04"
+      },
+      "verdict": {
+        "attribution": [
+          {
+            "driver_id": "integration_delay",
+            "eliminated_by": null,
+            "share": 0.875,
+            "status": "primary"
+          },
+          {
+            "driver_id": "pricing_change",
+            "eliminated_by": null,
+            "share": 0.08333333333333333,
+            "status": "minor"
+          },
+          {
+            "driver_id": "mix",
+            "eliminated_by": null,
+            "share": 0.041666666666666664,
+            "status": "minor"
+          },
+          {
+            "driver_id": "competitor_offer",
+            "eliminated_by": "locality",
+            "share": null,
+            "status": "eliminated"
+          }
+        ],
+        "confidence": "likely"
+      },
+      "verification": {
+        "baseline": "own",
+        "checks": [
+          {
+            "detail": "billing watermark 4h old against a 26h SLA",
+            "name": "freshness",
+            "passed": true,
+            "statistic": 4.0
+          },
+          {
+            "detail": "invoice-line count within 1% of the 28-day weekday median; vintage stable",
+            "name": "completeness",
+            "passed": true,
+            "statistic": 0.99
+          },
+          {
+            "detail": "boundary period recomputed under the 2025-11-01 epoch; the step survives, so it is business, not drift",
+            "name": "definition_drift",
+            "passed": true,
+            "statistic": null
+          },
+          {
+            "detail": "largest single invoice is 9% of the movement, under the 35% single-record threshold; no refund batch, no period-boundary slippage",
+            "name": "artefact",
+            "passed": true,
+            "statistic": 0.09
+          },
+          {
+            "detail": "robust z = -3.8 persisted 2 periods; 2.4 Cr clears both the 3% relative and 25 L absolute thresholds",
+            "name": "materiality",
+            "passed": true,
+            "statistic": -3.8
+          }
+        ],
+        "confidence_ceiling": null,
+        "freshness_hours": 4.0,
+        "passed": true,
+        "persistence": 2,
+        "provisional": false,
+        "robust_z": -3.8
+      }
+    },
+    "persona": {
+      "id": "cfo",
+      "label": "CFO",
+      "region": null,
+      "role_key": "cfo"
+    },
+    "redactions": [],
+    "statement": "No redactions: this view is complete."
+  },
+  "support_lead_east": {
+    "payload": {
+      "decomposition": {
+        "by_dimension": {
+          "account": [
+            {
+              "children": [],
+              "delta": "\u2212\u20b91\u20135 Cr",
+              "dimension": "account",
+              "key": "2 accounts (segment restricted)",
+              "share": 0.875
+            },
+            {
+              "children": [],
+              "delta": "\u2212under \u20b91 Cr",
+              "dimension": "account",
+              "key": "Account 01db",
+              "share": 0.125
+            }
+          ],
+          "kpi": [
+            {
+              "children": [],
+              "delta": "\u2212\u20b91\u20135 Cr",
+              "dimension": "kpi",
+              "key": "gross_renewal_rate",
+              "share": 0.875
+            },
+            {
+              "children": [],
+              "delta": "\u2212under \u20b91 Cr",
+              "dimension": "kpi",
+              "key": "expansion_arr",
+              "share": 0.08333333333333333
+            },
+            {
+              "children": [],
+              "delta": "\u2212under \u20b91 Cr",
+              "dimension": "kpi",
+              "key": "new_business_arr",
+              "share": 0.041666666666666664
+            }
+          ]
+        },
+        "footprint": {
+          "delta": "\u2212\u20b91\u20135 Cr",
+          "entities": {
+            "account_id": [
+              "2 accounts (segment restricted)"
+            ]
+          },
+          "window_end": "2026-04-30",
+          "window_start": "2026-03-01"
+        },
+        "hhi": 0.4201388888888889,
+        "kpi": "net_revenue",
+        "period": "2026-04",
+        "pvm": {
+          "mix": "\u2212under \u20b91 Cr",
+          "price": "\u2212under \u20b91 Cr",
+          "volume": "\u2212\u20b91\u20135 Cr"
+        },
+        "total_delta": "\u2212\u20b91\u20135 Cr"
+      },
+      "hypotheses": [
+        {
+          "driver_id": "integration_delay",
+          "expected_signature": {
+            "control": "matched enterprise accounts without the delay renewed normally",
+            "dose": "accounts with more integration tickets churn harder",
+            "locality": "confined to the two footprint accounts",
+            "timing": "ticket spike precedes the renewal decision by 14-45 days"
+          },
+          "priority": 1,
+          "rationale": "Both footprint accounts opened integration tickets in the weeks before their renewal dates."
+        },
+        {
+          "driver_id": "pricing_change",
+          "expected_signature": {
+            "control": "segments on the old price book held steady",
+            "dose": "larger price deltas produce larger revenue loss",
+            "locality": "every account exposed to the new price book",
+            "timing": "price effective date precedes the renewal window"
+          },
+          "priority": 2,
+          "rationale": "A list-price increase took effect on 2026-03-01 across the enterprise segment."
+        },
+        {
+          "driver_id": "competitor_offer",
+          "expected_signature": {
+            "control": "unexposed regions held steady",
+            "dose": null,
+            "locality": "accounts in the targeted region",
+            "timing": "launch precedes the decline"
+          },
+          "priority": 3,
+          "rationale": "A competitor launched a promotion during the quarter."
+        }
+      ],
+      "id": "case-2026-04-net_revenue-east",
+      "ledger": [
+        {
+          "claim": "Net revenue for East fell [amount restricted] INR month on month, of which [amount restricted] sits in gross renewals.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-001",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "Account 5da4 and Account b625 account for 87.5% of the absolute movement across 49 accounts.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-002",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east/by_account",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "Integration ticket volume on Account 5da4 and Account b625 rose 3.2x against their own 12-month baseline, starting 2026-04-12.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-003",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.ticket_spike/2026-04/acme+northwind",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.9,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The Account 5da4 renewal call notes record the integration backlog as the reason for deferring signature.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 26.0,
+          "id": "ev-004",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "We're holding the signature until the integration backlog is cleared \u2014 that's the one blocker on our side.",
+          "source": {
+            "record_id": "opportunity_note/9f21c4",
+            "system": "crm",
+            "timestamp": "2026-04-28T11:32:00Z",
+            "url": null
+          },
+          "strength": 0.7,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The 2026-03-01 price increase applied to 41 enterprise accounts; 39 of them renewed on schedule.",
+          "contradicts": [
+            "pricing_change"
+          ],
+          "coverage": 1.0,
+          "denominator": 41,
+          "freshness_hours": 4.0,
+          "id": "ev-005",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.price_delta/2026-03",
+            "system": "billing",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.95,
+          "supports": []
+        },
+        {
+          "claim": "0 of 12 populated lost-reason fields on the footprint accounts and their peers name a competitor.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": 1.0,
+          "denominator": 12,
+          "freshness_hours": 26.0,
+          "id": "ev-006",
+          "kind": "absence",
+          "method": "sql",
+          "outcome": "checked_absent",
+          "quote": null,
+          "source": {
+            "record_id": "probe.lost_reason_scan/2026-03-01..2026-04-30",
+            "system": "crm",
+            "timestamp": "2026-05-01T01:56:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": []
+        },
+        {
+          "claim": "The competitor promotion covered APAC only, and its first news mention is dated 2026-04-20 \u2014 after the East decline began.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-007",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "The promotional pricing is available exclusively to customers in the APAC region through the end of Q2.",
+          "source": {
+            "record_id": "news_item/1183",
+            "system": "product_ops",
+            "timestamp": "2026-04-20T06:00:00Z",
+            "url": null
+          },
+          "strength": 0.85,
+          "supports": []
+        },
+        {
+          "claim": "Difference-in-differences against 6 matched enterprise accounts gives -[amount restricted] INR; the real effect is more extreme than all 6 placebo assignments.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-008",
+          "kind": "statistic",
+          "method": "did",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.did/2026-04/acme+northwind",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "Only 2 accounts carry the integration delay, so the dose-response rank correlation cannot be computed at the n >= 5 minimum.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": 2,
+          "freshness_hours": 0.2,
+          "id": "ev-009",
+          "kind": "fact",
+          "method": "stat_test",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.spearman/2026-04/integration_delay",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        }
+      ],
+      "open_question": {
+        "hypotheses_separated": [
+          "integration_delay"
+        ],
+        "owner_role": "vp_sales",
+        "question": "Did the integration delay influence the renewal decision? Ask the Account 5da4 and Account b625 account owners.",
+        "value_at_stake": "\u20b91\u20135 Cr"
+      },
+      "priority": "\u20b91\u20135 Cr",
+      "recommendation": {
+        "action": "Prioritise the integration fix and contact both accounts this week.",
+        "confidence": "likely",
+        "driver_id": "integration_delay",
+        "expected_impact": [
+          "\u20b91\u20135 Cr",
+          "\u20b91\u20135 Cr"
+        ],
+        "lever": "prioritise_integration_fix",
+        "monitoring": "renewal_rate, East, weekly; escalate if not recovered within 2 cycles",
+        "owner_role": "vp_sales"
+      },
+      "telemetry": {
+        "calls": [
+          {
+            "cache_hit": false,
+            "cost_inr": 2.1,
+            "input_tokens": 3200,
+            "latency_ms": 1400.0,
+            "model": "claude-sonnet",
+            "output_tokens": 700,
+            "stage": "s3"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 4.6,
+            "input_tokens": 9100,
+            "latency_ms": 3100.0,
+            "model": "claude-sonnet",
+            "output_tokens": 2200,
+            "stage": "s4c"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 1.4,
+            "input_tokens": 2200,
+            "latency_ms": 1500.0,
+            "model": "claude-sonnet",
+            "output_tokens": 800,
+            "stage": "s8b"
+          }
+        ],
+        "stages": [
+          {
+            "stage": "s0",
+            "used_model": false,
+            "wall_ms": 120.0
+          },
+          {
+            "stage": "s1",
+            "used_model": false,
+            "wall_ms": 340.0
+          },
+          {
+            "stage": "s2",
+            "used_model": false,
+            "wall_ms": 410.0
+          },
+          {
+            "stage": "s3",
+            "used_model": true,
+            "wall_ms": 1400.0
+          },
+          {
+            "stage": "s4",
+            "used_model": true,
+            "wall_ms": 3950.0
+          },
+          {
+            "stage": "s5",
+            "used_model": false,
+            "wall_ms": 380.0
+          },
+          {
+            "stage": "s6",
+            "used_model": false,
+            "wall_ms": 45.0
+          },
+          {
+            "stage": "s7",
+            "used_model": false,
+            "wall_ms": 25.0
+          },
+          {
+            "stage": "s8a",
+            "used_model": false,
+            "wall_ms": 15.0
+          },
+          {
+            "stage": "s8b",
+            "used_model": true,
+            "wall_ms": 1500.0
+          },
+          {
+            "stage": "s9",
+            "used_model": false,
+            "wall_ms": 5.0
+          },
+          {
+            "stage": "s10",
+            "used_model": false,
+            "wall_ms": 10.0
+          }
+        ]
+      },
+      "tests": {
+        "competitor_offer": {
+          "control": {
+            "detail": "no matched control group is exposed to the promotion within the footprint",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "dose": {
+            "detail": "no exposure gradient available for accounts outside the promoted region",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "promotion covered APAC only; Jaccard 0.0 against the East footprint",
+            "evidence_ids": [
+              "ev-007",
+              "ev-006"
+            ],
+            "outcome": "refute",
+            "statistic": 0.0
+          },
+          "timing": {
+            "detail": "first mention 2026-04-20, after the East decline had begun",
+            "evidence_ids": [
+              "ev-007"
+            ],
+            "outcome": "refute",
+            "statistic": -19.0
+          }
+        },
+        "integration_delay": {
+          "control": {
+            "detail": "DiD -[amount restricted] INR; the real effect is rank 1 of 7 against 6 placebo assignments",
+            "evidence_ids": [
+              "ev-008"
+            ],
+            "outcome": "pass",
+            "statistic": -9000000.0
+          },
+          "dose": {
+            "detail": "n = 2 treated accounts, below the n >= 5 minimum for Spearman \u2014 the test cannot pass here, which is why the verdict cannot be Confirmed",
+            "evidence_ids": [
+              "ev-009"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the cause footprint and the effect footprint are the same two accounts",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 1.0
+          },
+          "timing": {
+            "detail": "ticket onset precedes each renewal decision by 21 and 23 days, inside the 45-day maximum lag",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 22.0
+          }
+        },
+        "pricing_change": {
+          "control": {
+            "detail": "exposed accounts outside the footprint moved with the unexposed control group",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.04
+          },
+          "dose": {
+            "detail": "not decisive: price delta was uniform across the exposed accounts, so there is no gradient to correlate",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the price change hit 41 accounts and 39 held steady; Jaccard 0.05 against the effect footprint. A cause with a wider footprint than its effect is not the cause",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.05
+          },
+          "timing": {
+            "detail": "price effective 2026-03-01, ahead of both renewal dates",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "pass",
+            "statistic": 42.0
+          }
+        }
+      },
+      "trigger": {
+        "delta": "\u2212\u20b91\u20135 Cr",
+        "delta_relative": -0.08,
+        "dimensions": {
+          "region": "East"
+        },
+        "kpi": "net_revenue",
+        "period": "2026-04"
+      },
+      "verdict": {
+        "attribution": [
+          {
+            "driver_id": "integration_delay",
+            "eliminated_by": null,
+            "share": 0.875,
+            "status": "primary"
+          },
+          {
+            "driver_id": "pricing_change",
+            "eliminated_by": null,
+            "share": 0.08333333333333333,
+            "status": "minor"
+          },
+          {
+            "driver_id": "mix",
+            "eliminated_by": null,
+            "share": 0.041666666666666664,
+            "status": "minor"
+          },
+          {
+            "driver_id": "competitor_offer",
+            "eliminated_by": "locality",
+            "share": null,
+            "status": "eliminated"
+          }
+        ],
+        "confidence": "likely"
+      },
+      "verification": {
+        "baseline": "own",
+        "checks": [
+          {
+            "detail": "billing watermark 4h old against a 26h SLA",
+            "name": "freshness",
+            "passed": true,
+            "statistic": 4.0
+          },
+          {
+            "detail": "invoice-line count within 1% of the 28-day weekday median; vintage stable",
+            "name": "completeness",
+            "passed": true,
+            "statistic": 0.99
+          },
+          {
+            "detail": "boundary period recomputed under the 2025-11-01 epoch; the step survives, so it is business, not drift",
+            "name": "definition_drift",
+            "passed": true,
+            "statistic": null
+          },
+          {
+            "detail": "largest single invoice is 9% of the movement, under the 35% single-record threshold; no refund batch, no period-boundary slippage",
+            "name": "artefact",
+            "passed": true,
+            "statistic": 0.09
+          },
+          {
+            "detail": "robust z = -3.8 persisted 2 periods; 2.4 Cr clears both the 3% relative and 25 L absolute thresholds",
+            "name": "materiality",
+            "passed": true,
+            "statistic": -3.8
+          }
+        ],
+        "confidence_ceiling": null,
+        "freshness_hours": 4.0,
+        "passed": true,
+        "persistence": 2,
+        "provisional": false,
+        "robust_z": -3.8
+      }
+    },
+    "persona": {
+      "id": "support_lead_east",
+      "label": "Support Lead, East",
+      "region": "East",
+      "role_key": "support_lead"
+    },
+    "redactions": [
+      {
+        "count": 2,
+        "detail": "2 accounts withheld (segment outside this view)",
+        "field": "segment",
+        "marker": "2 accounts (segment restricted)",
+        "surface": "domain"
+      },
+      {
+        "count": 3,
+        "detail": "account names hashed (hash_alias)",
+        "field": "account_name",
+        "marker": "hash_alias",
+        "surface": "column"
+      },
+      {
+        "count": 9,
+        "detail": "amounts banded (band_1_5_cr)",
+        "field": "amount_net",
+        "marker": "band_1_5_cr",
+        "surface": "column"
+      }
+    ],
+    "statement": "Redacted: 2 accounts withheld (segment outside this view); account names hashed (hash_alias); amounts banded (band_1_5_cr)."
+  },
+  "vp_sales_east": {
+    "payload": {
+      "decomposition": {
+        "by_dimension": {
+          "account": [
+            {
+              "children": [],
+              "delta": -13000000.0,
+              "dimension": "account",
+              "key": "ACME",
+              "share": 0.5416666666666666
+            },
+            {
+              "children": [],
+              "delta": -8000000.0,
+              "dimension": "account",
+              "key": "NORTHWIND",
+              "share": 0.3333333333333333
+            },
+            {
+              "children": [],
+              "delta": -3000000.0,
+              "dimension": "account",
+              "key": "others",
+              "share": 0.125
+            }
+          ],
+          "kpi": [
+            {
+              "children": [],
+              "delta": -21000000.0,
+              "dimension": "kpi",
+              "key": "gross_renewal_rate",
+              "share": 0.875
+            },
+            {
+              "children": [],
+              "delta": -2000000.0,
+              "dimension": "kpi",
+              "key": "expansion_arr",
+              "share": 0.08333333333333333
+            },
+            {
+              "children": [],
+              "delta": -1000000.0,
+              "dimension": "kpi",
+              "key": "new_business_arr",
+              "share": 0.041666666666666664
+            }
+          ]
+        },
+        "footprint": {
+          "delta": -21000000.0,
+          "entities": {
+            "account_id": [
+              "ACME",
+              "NORTHWIND"
+            ]
+          },
+          "window_end": "2026-04-30",
+          "window_start": "2026-03-01"
+        },
+        "hhi": 0.4201388888888889,
+        "kpi": "net_revenue",
+        "period": "2026-04",
+        "pvm": {
+          "mix": -1000000.0,
+          "price": -2000000.0,
+          "volume": -21000000.0
+        },
+        "total_delta": -24000000.0
+      },
+      "hypotheses": [
+        {
+          "driver_id": "integration_delay",
+          "expected_signature": {
+            "control": "matched enterprise accounts without the delay renewed normally",
+            "dose": "accounts with more integration tickets churn harder",
+            "locality": "confined to the two footprint accounts",
+            "timing": "ticket spike precedes the renewal decision by 14-45 days"
+          },
+          "priority": 1,
+          "rationale": "Both footprint accounts opened integration tickets in the weeks before their renewal dates."
+        },
+        {
+          "driver_id": "pricing_change",
+          "expected_signature": {
+            "control": "segments on the old price book held steady",
+            "dose": "larger price deltas produce larger revenue loss",
+            "locality": "every account exposed to the new price book",
+            "timing": "price effective date precedes the renewal window"
+          },
+          "priority": 2,
+          "rationale": "A list-price increase took effect on 2026-03-01 across the enterprise segment."
+        },
+        {
+          "driver_id": "competitor_offer",
+          "expected_signature": {
+            "control": "unexposed regions held steady",
+            "dose": null,
+            "locality": "accounts in the targeted region",
+            "timing": "launch precedes the decline"
+          },
+          "priority": 3,
+          "rationale": "A competitor launched a promotion during the quarter."
+        }
+      ],
+      "id": "case-2026-04-net_revenue-east",
+      "ledger": [
+        {
+          "claim": "Net revenue for East fell 24,000,000 INR month on month, of which 21,000,000 sits in gross renewals.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-001",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "ACME and NORTHWIND account for 87.5% of the absolute movement across 49 accounts.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-002",
+          "kind": "statistic",
+          "method": "contribution",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "metric.net_revenue/2026-04/east/by_account",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:10:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        },
+        {
+          "claim": "Integration ticket volume on ACME and NORTHWIND rose 3.2x against their own 12-month baseline, starting 2026-04-12.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-003",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.ticket_spike/2026-04/acme+northwind",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.9,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The ACME renewal call notes record the integration backlog as the reason for deferring signature.",
+          "contradicts": [],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 26.0,
+          "id": "ev-004",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "We're holding the signature until the integration backlog is cleared \u2014 that's the one blocker on our side.",
+          "source": {
+            "record_id": "opportunity_note/9f21c4",
+            "system": "crm",
+            "timestamp": "2026-04-28T11:32:00Z",
+            "url": null
+          },
+          "strength": 0.7,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "The 2026-03-01 price increase applied to 41 enterprise accounts; 39 of them renewed on schedule.",
+          "contradicts": [
+            "pricing_change"
+          ],
+          "coverage": 1.0,
+          "denominator": 41,
+          "freshness_hours": 4.0,
+          "id": "ev-005",
+          "kind": "statistic",
+          "method": "sql",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "probe.price_delta/2026-03",
+            "system": "billing",
+            "timestamp": "2026-05-01T01:55:00Z",
+            "url": null
+          },
+          "strength": 0.95,
+          "supports": []
+        },
+        {
+          "claim": "0 of 12 populated lost-reason fields on the footprint accounts and their peers name a competitor.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": 1.0,
+          "denominator": 12,
+          "freshness_hours": 26.0,
+          "id": "ev-006",
+          "kind": "absence",
+          "method": "sql",
+          "outcome": "checked_absent",
+          "quote": null,
+          "source": {
+            "record_id": "probe.lost_reason_scan/2026-03-01..2026-04-30",
+            "system": "crm",
+            "timestamp": "2026-05-01T01:56:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": []
+        },
+        {
+          "claim": "The competitor promotion covered APAC only, and its first news mention is dated 2026-04-20 \u2014 after the East decline began.",
+          "contradicts": [
+            "competitor_offer"
+          ],
+          "coverage": null,
+          "denominator": null,
+          "freshness_hours": 0.2,
+          "id": "ev-007",
+          "kind": "document",
+          "method": "llm_extraction",
+          "outcome": "found",
+          "quote": "The promotional pricing is available exclusively to customers in the APAC region through the end of Q2.",
+          "source": {
+            "record_id": "news_item/1183",
+            "system": "product_ops",
+            "timestamp": "2026-04-20T06:00:00Z",
+            "url": null
+          },
+          "strength": 0.85,
+          "supports": []
+        },
+        {
+          "claim": "Difference-in-differences against 6 matched enterprise accounts gives -9,000,000 INR; the real effect is more extreme than all 6 placebo assignments.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": null,
+          "freshness_hours": 4.0,
+          "id": "ev-008",
+          "kind": "statistic",
+          "method": "did",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.did/2026-04/acme+northwind",
+            "system": "billing",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 0.8,
+          "supports": [
+            "integration_delay"
+          ]
+        },
+        {
+          "claim": "Only 2 accounts carry the integration delay, so the dose-response rank correlation cannot be computed at the n >= 5 minimum.",
+          "contradicts": [],
+          "coverage": 1.0,
+          "denominator": 2,
+          "freshness_hours": 0.2,
+          "id": "ev-009",
+          "kind": "fact",
+          "method": "stat_test",
+          "outcome": "found",
+          "quote": null,
+          "source": {
+            "record_id": "stats.spearman/2026-04/integration_delay",
+            "system": "product_ops",
+            "timestamp": "2026-05-01T02:11:00Z",
+            "url": null
+          },
+          "strength": 1.0,
+          "supports": []
+        }
+      ],
+      "open_question": {
+        "hypotheses_separated": [
+          "integration_delay"
+        ],
+        "owner_role": "vp_sales",
+        "question": "Did the integration delay influence the renewal decision? Ask the ACME and NORTHWIND account owners.",
+        "value_at_stake": 21000000.0
+      },
+      "priority": 16800000.0,
+      "recommendation": {
+        "action": "Prioritise the integration fix and contact both accounts this week.",
+        "confidence": "likely",
+        "driver_id": "integration_delay",
+        "expected_impact": [
+          18000000.0,
+          24000000.0
+        ],
+        "lever": "prioritise_integration_fix",
+        "monitoring": "renewal_rate, East, weekly; escalate if not recovered within 2 cycles",
+        "owner_role": "vp_sales"
+      },
+      "telemetry": {
+        "calls": [
+          {
+            "cache_hit": false,
+            "cost_inr": 2.1,
+            "input_tokens": 3200,
+            "latency_ms": 1400.0,
+            "model": "claude-sonnet",
+            "output_tokens": 700,
+            "stage": "s3"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 4.6,
+            "input_tokens": 9100,
+            "latency_ms": 3100.0,
+            "model": "claude-sonnet",
+            "output_tokens": 2200,
+            "stage": "s4c"
+          },
+          {
+            "cache_hit": false,
+            "cost_inr": 1.4,
+            "input_tokens": 2200,
+            "latency_ms": 1500.0,
+            "model": "claude-sonnet",
+            "output_tokens": 800,
+            "stage": "s8b"
+          }
+        ],
+        "stages": [
+          {
+            "stage": "s0",
+            "used_model": false,
+            "wall_ms": 120.0
+          },
+          {
+            "stage": "s1",
+            "used_model": false,
+            "wall_ms": 340.0
+          },
+          {
+            "stage": "s2",
+            "used_model": false,
+            "wall_ms": 410.0
+          },
+          {
+            "stage": "s3",
+            "used_model": true,
+            "wall_ms": 1400.0
+          },
+          {
+            "stage": "s4",
+            "used_model": true,
+            "wall_ms": 3950.0
+          },
+          {
+            "stage": "s5",
+            "used_model": false,
+            "wall_ms": 380.0
+          },
+          {
+            "stage": "s6",
+            "used_model": false,
+            "wall_ms": 45.0
+          },
+          {
+            "stage": "s7",
+            "used_model": false,
+            "wall_ms": 25.0
+          },
+          {
+            "stage": "s8a",
+            "used_model": false,
+            "wall_ms": 15.0
+          },
+          {
+            "stage": "s8b",
+            "used_model": true,
+            "wall_ms": 1500.0
+          },
+          {
+            "stage": "s9",
+            "used_model": false,
+            "wall_ms": 5.0
+          },
+          {
+            "stage": "s10",
+            "used_model": false,
+            "wall_ms": 10.0
+          }
+        ]
+      },
+      "tests": {
+        "competitor_offer": {
+          "control": {
+            "detail": "no matched control group is exposed to the promotion within the footprint",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "dose": {
+            "detail": "no exposure gradient available for accounts outside the promoted region",
+            "evidence_ids": [],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "promotion covered APAC only; Jaccard 0.0 against the East footprint",
+            "evidence_ids": [
+              "ev-007",
+              "ev-006"
+            ],
+            "outcome": "refute",
+            "statistic": 0.0
+          },
+          "timing": {
+            "detail": "first mention 2026-04-20, after the East decline had begun",
+            "evidence_ids": [
+              "ev-007"
+            ],
+            "outcome": "refute",
+            "statistic": -19.0
+          }
+        },
+        "integration_delay": {
+          "control": {
+            "detail": "DiD -9,000,000 INR; the real effect is rank 1 of 7 against 6 placebo assignments",
+            "evidence_ids": [
+              "ev-008"
+            ],
+            "outcome": "pass",
+            "statistic": -9000000.0
+          },
+          "dose": {
+            "detail": "n = 2 treated accounts, below the n >= 5 minimum for Spearman \u2014 the test cannot pass here, which is why the verdict cannot be Confirmed",
+            "evidence_ids": [
+              "ev-009"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the cause footprint and the effect footprint are the same two accounts",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 1.0
+          },
+          "timing": {
+            "detail": "ticket onset precedes each renewal decision by 21 and 23 days, inside the 45-day maximum lag",
+            "evidence_ids": [
+              "ev-003"
+            ],
+            "outcome": "pass",
+            "statistic": 22.0
+          }
+        },
+        "pricing_change": {
+          "control": {
+            "detail": "exposed accounts outside the footprint moved with the unexposed control group",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.04
+          },
+          "dose": {
+            "detail": "not decisive: price delta was uniform across the exposed accounts, so there is no gradient to correlate",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "inconclusive",
+            "statistic": null
+          },
+          "locality": {
+            "detail": "the price change hit 41 accounts and 39 held steady; Jaccard 0.05 against the effect footprint. A cause with a wider footprint than its effect is not the cause",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "refute",
+            "statistic": 0.05
+          },
+          "timing": {
+            "detail": "price effective 2026-03-01, ahead of both renewal dates",
+            "evidence_ids": [
+              "ev-005"
+            ],
+            "outcome": "pass",
+            "statistic": 42.0
+          }
+        }
+      },
+      "trigger": {
+        "delta": -24000000.0,
+        "delta_relative": -0.08,
+        "dimensions": {
+          "region": "East"
+        },
+        "kpi": "net_revenue",
+        "period": "2026-04"
+      },
+      "verdict": {
+        "attribution": [
+          {
+            "driver_id": "integration_delay",
+            "eliminated_by": null,
+            "share": 0.875,
+            "status": "primary"
+          },
+          {
+            "driver_id": "pricing_change",
+            "eliminated_by": null,
+            "share": 0.08333333333333333,
+            "status": "minor"
+          },
+          {
+            "driver_id": "mix",
+            "eliminated_by": null,
+            "share": 0.041666666666666664,
+            "status": "minor"
+          },
+          {
+            "driver_id": "competitor_offer",
+            "eliminated_by": "locality",
+            "share": null,
+            "status": "eliminated"
+          }
+        ],
+        "confidence": "likely"
+      },
+      "verification": {
+        "baseline": "own",
+        "checks": [
+          {
+            "detail": "billing watermark 4h old against a 26h SLA",
+            "name": "freshness",
+            "passed": true,
+            "statistic": 4.0
+          },
+          {
+            "detail": "invoice-line count within 1% of the 28-day weekday median; vintage stable",
+            "name": "completeness",
+            "passed": true,
+            "statistic": 0.99
+          },
+          {
+            "detail": "boundary period recomputed under the 2025-11-01 epoch; the step survives, so it is business, not drift",
+            "name": "definition_drift",
+            "passed": true,
+            "statistic": null
+          },
+          {
+            "detail": "largest single invoice is 9% of the movement, under the 35% single-record threshold; no refund batch, no period-boundary slippage",
+            "name": "artefact",
+            "passed": true,
+            "statistic": 0.09
+          },
+          {
+            "detail": "robust z = -3.8 persisted 2 periods; 2.4 Cr clears both the 3% relative and 25 L absolute thresholds",
+            "name": "materiality",
+            "passed": true,
+            "statistic": -3.8
+          }
+        ],
+        "confidence_ceiling": null,
+        "freshness_hours": 4.0,
+        "passed": true,
+        "persistence": 2,
+        "provisional": false,
+        "robust_z": -3.8
+      }
+    },
+    "persona": {
+      "id": "vp_sales_east",
+      "label": "VP Sales, East",
+      "region": "East",
+      "role_key": "vp_sales"
+    },
+    "redactions": [],
+    "statement": "No redactions: this view is complete."
+  }
+}

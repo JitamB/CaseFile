@@ -129,3 +129,62 @@ export interface Case {
 
 export const TEST_NAMES = ['timing', 'locality', 'dose', 'control'] as const
 export type TestName = (typeof TEST_NAMES)[number]
+
+// ── Screen 4 — Persona switcher ─────────────────────────────────────────────
+//
+// entitle.py bands a restricted amount in place, at the same JSON path a
+// `Case` carries an exact float — §15: "restricted values replaced with
+// explicit markers, never silently dropped." `Moneyish` is that field
+// widened to admit the string it becomes once banded; `money()` in
+// PersonaSwitcher.tsx is the one place both shapes get rendered.
+
+export type Moneyish = number | string
+
+export interface EntitledPayload {
+  id: string
+  trigger: {
+    kpi: string
+    period: string
+    dimensions: Record<string, string>
+    delta: Moneyish
+    delta_relative: number
+  }
+  decomposition: {
+    total_delta: Moneyish
+    by_dimension: Record<
+      string,
+      { dimension: string; key: string; delta: Moneyish; share: number }[]
+    >
+  } | null
+  verdict: { attribution: Attribution[]; confidence: Confidence } | null
+  recommendation: {
+    action: string
+    owner_role: string
+    expected_impact: [Moneyish, Moneyish]
+    monitoring: string
+  } | null
+  open_question: { question: string; owner_role: string; value_at_stake: Moneyish } | null
+  priority: Moneyish
+}
+
+export interface Redaction {
+  surface: 'row' | 'column' | 'domain'
+  field: string
+  marker: string
+  count: number
+  detail: string
+}
+
+export interface EntitledView {
+  persona: Persona
+  payload: EntitledPayload
+  statement: string
+  redactions: Redaction[]
+}
+
+export interface Persona {
+  id: string
+  role_key: string
+  label: string
+  region: string | null
+}
