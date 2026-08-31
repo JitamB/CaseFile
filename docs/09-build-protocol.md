@@ -107,7 +107,7 @@ The template enforces it, so it cannot be forgotten:
 ### Verification
 <!-- the exact command, and its output pasted below -->
 ```
-$ pytest tests/engine/test_challenge.py -q
+$ pytest tests/test_challenge.py -q
 ....... 7 passed in 1.2s
 ```
 
