@@ -42,6 +42,16 @@ embed = [
   "sentence-transformers>=3.0",
 ]
 
+# LLM_PROVIDER=google|groq (llm/__init__.py's provider_from_env()) — genuinely
+# optional, the same reasoning as `embed`: anthropic is the one CI actually
+# type-checks a live call against (dev's own comment explains why it is a
+# default dep instead), so Gemini's and Groq's SDKs stay opt-in rather than
+# paid for on every push for two vendors most runs will not select.
+providers = [
+  "google-genai>=1.0",
+  "groq>=0.11",
+]
+
 dev = [
   "pytest>=8.0",
   "ruff>=0.5",
@@ -72,7 +82,7 @@ plugins = ["pydantic.mypy"]
 # override says "this library is untyped or optional" once, where an inline
 # ignore reads as "this line is a problem" at each call site.
 [[tool.mypy.overrides]]
-module = ["statsmodels.*", "rank_bm25.*", "sentence_transformers.*"]
+module = ["statsmodels.*", "rank_bm25.*", "sentence_transformers.*", "google.*", "groq.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
