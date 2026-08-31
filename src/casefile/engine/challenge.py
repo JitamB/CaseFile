@@ -412,6 +412,16 @@ def _price_delta_footprint(
 def _lost_reason_footprint(
     con: duckdb.DuckDBPyConnection, driver: Driver, footprint: Footprint
 ) -> set[str] | None:
+    """`None`, not `set()`, when no competitor-tagged news exists at all.
+
+    Unlike `price_book` (always has full history — an empty window is a real,
+    checked absence), a competitor mention is not guaranteed to exist anywhere
+    in the corpus. Returning `set()` here would score as `J=0.0`, refuted —
+    indistinguishable from "we looked and it genuinely isn't there" when the
+    honest state is "there was nothing to look at". `None` reads as
+    inconclusive instead, matching 4a's own uncheckable finding on the exact
+    same mechanism for the exact same scenario.
+    """
     start = footprint.window_start - timedelta(days=driver.max_lag_days)
     regions = [
         r[0]
@@ -423,7 +433,7 @@ def _lost_reason_footprint(
         ).fetchall()
     ]
     if not regions:
-        return set()
+        return None
     rows = con.execute(
         "SELECT account_id FROM crm.account WHERE region IN (SELECT UNNEST($regions))",
         {"regions": regions},
