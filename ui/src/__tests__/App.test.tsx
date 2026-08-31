@@ -22,6 +22,7 @@ describe('App — list, detail, and the evidence link between them', () => {
 
     expect(await screen.findByTestId('case-file')).toBeInTheDocument()
     expect(screen.getByText('Evidence')).toBeInTheDocument()
+    expect(screen.getByText('Telemetry')).toBeInTheDocument()
     expect(screen.queryByTestId('case-list')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByText(/Back to cases/))

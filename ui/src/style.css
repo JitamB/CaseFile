@@ -61,3 +61,10 @@ h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.04em; color: 
 }
 .redaction-statement.clean { background: #f4f4f4; border-color: #ddd; color: #555; }
 .account-list { margin: 1rem 0; }
+
+.telemetry-summary { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem; }
+.telemetry-summary dt { font-size: 0.75rem; color: #888; text-transform: uppercase; }
+.telemetry-summary dd { margin: 0; font-size: 1.1rem; font-weight: 600; }
+.telemetry-stages { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.telemetry-stages td, .telemetry-stages th { padding: 0.2rem 0.5rem; text-align: left; border-top: 1px solid #eee; }
+.telemetry-stages tr[data-used-model="true"] td:last-child { color: #a15c00; }
