@@ -83,10 +83,11 @@ export interface TestMatrix {
 export interface EvidenceItem {
   id: string
   claim: string
+  quote: string | null
   kind: string
   outcome: 'found' | 'checked_absent' | 'uncheckable'
   method: string
-  source: { system: string; record_id: string; timestamp: string }
+  source: { system: string; record_id: string; timestamp: string; url: string | null }
   denominator: number | null
   coverage: number | null
   freshness_hours: number

@@ -10,10 +10,11 @@ const OUTCOME_LABEL: Record<string, string> = {
 /**
  * Block 3 — §15 S5's four tests, per hypothesis.
  *
- * A test's `evidence_ids` link to the ledger (Screen 3's job); this block only
- * needs the outcome and the sentence, because §17's whole claim is that
- * falsification is reproducible — the reader should be able to see *what*
- * happened without first clicking through to *why*.
+ * A test's `evidence_ids` link to the ledger (Screen 3, `Ledger`) as plain
+ * in-page anchors — this block still states the outcome and the sentence
+ * outright, because §17's whole claim is that falsification is reproducible:
+ * the reader should be able to see *what* happened without first clicking
+ * through to *why*. The link is for the reader who wants the source too.
  */
 export function WhatWeTested({ hypotheses, tests }: { hypotheses: Case['hypotheses']; tests: Case['tests'] }) {
   return (
@@ -33,7 +34,14 @@ export function WhatWeTested({ hypotheses, tests }: { hypotheses: Case['hypothes
                       <td className={`outcome outcome-${matrix[name].outcome}`}>
                         {OUTCOME_LABEL[matrix[name].outcome]}
                       </td>
-                      <td>{matrix[name].detail}</td>
+                      <td>
+                        {matrix[name].detail}{' '}
+                        {matrix[name].evidence_ids.map((id) => (
+                          <a key={id} href={`#${id}`} className="evidence-link">
+                            source
+                          </a>
+                        ))}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
