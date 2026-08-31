@@ -17,7 +17,7 @@ describe('App — list, detail, and the evidence link between them', () => {
 
   it('selecting a case shows its file and evidence, with a way back', async () => {
     render(<App />)
-    const row = await screen.findByRole('button')
+    const [row] = await screen.findAllByRole('button')
     fireEvent.click(row)
 
     expect(await screen.findByTestId('case-file')).toBeInTheDocument()
@@ -31,7 +31,7 @@ describe('App — list, detail, and the evidence link between them', () => {
 
   it("a challenge test's evidence link resolves to a real ledger anchor", async () => {
     render(<App />)
-    fireEvent.click(await screen.findByRole('button'))
+    fireEvent.click((await screen.findAllByRole('button'))[0])
     await screen.findByTestId('case-file')
 
     const link = screen.getAllByText('source')[0] as HTMLAnchorElement
@@ -41,7 +41,7 @@ describe('App — list, detail, and the evidence link between them', () => {
 
   it('opens the persona switcher from a case, and back returns to that case', async () => {
     render(<App />)
-    fireEvent.click(await screen.findByRole('button'))
+    fireEvent.click((await screen.findAllByRole('button'))[0])
     await screen.findByTestId('case-file')
 
     fireEvent.click(screen.getByText(/View as another persona/))
@@ -50,5 +50,14 @@ describe('App — list, detail, and the evidence link between them', () => {
 
     fireEvent.click(screen.getByText(/Back to case/))
     expect(await screen.findByTestId('case-file')).toBeInTheDocument()
+  })
+
+  it('does not offer the persona switcher on a case with no entitled fixture', async () => {
+    render(<App />)
+    const rows = await screen.findAllByRole('button')
+    fireEvent.click(rows[rows.length - 1]) // lowest priority — a scenario without an entitled view
+    await screen.findByTestId('case-file')
+
+    expect(screen.queryByText(/View as another persona/)).not.toBeInTheDocument()
   })
 })
