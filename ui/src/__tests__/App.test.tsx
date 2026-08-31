@@ -37,4 +37,17 @@ describe('App — list, detail, and the evidence link between them', () => {
     const targetId = link.getAttribute('href')!.slice(1)
     expect(document.getElementById(targetId)).not.toBeNull()
   })
+
+  it('opens the persona switcher from a case, and back returns to that case', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button'))
+    await screen.findByTestId('case-file')
+
+    fireEvent.click(screen.getByText(/View as another persona/))
+    expect(await screen.findByTestId('persona-switcher')).toBeInTheDocument()
+    expect(screen.queryByTestId('case-file')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(/Back to case/))
+    expect(await screen.findByTestId('case-file')).toBeInTheDocument()
+  })
 })
