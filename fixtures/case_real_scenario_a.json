@@ -1,0 +1,1454 @@
+{
+  "decomposition": {
+    "by_dimension": {
+      "account": [
+        {
+          "children": [],
+          "delta": -15036255.700000001,
+          "dimension": "account",
+          "key": "ACC-0001",
+          "share": 0.5643757294022276
+        },
+        {
+          "children": [],
+          "delta": -10610321.879999997,
+          "dimension": "account",
+          "key": "ACC-0002",
+          "share": 0.39825128474088217
+        },
+        {
+          "children": [],
+          "delta": 179941.73000000045,
+          "dimension": "account",
+          "key": "ACC-0016",
+          "share": -0.006753991628291407
+        },
+        {
+          "children": [],
+          "delta": -175326.43999999762,
+          "dimension": "account",
+          "key": "ACC-0017",
+          "share": 0.0065807598269624085
+        },
+        {
+          "children": [],
+          "delta": -154384.96999999927,
+          "dimension": "account",
+          "key": "ACC-0043",
+          "share": 0.005794735856513175
+        },
+        {
+          "children": [],
+          "delta": -150664.24000000115,
+          "dimension": "account",
+          "key": "ACC-0047",
+          "share": 0.005655080762216149
+        },
+        {
+          "children": [],
+          "delta": 129993.11999999918,
+          "dimension": "account",
+          "key": "ACC-0012",
+          "share": -0.004879204196911258
+        },
+        {
+          "children": [],
+          "delta": -124709.07000000589,
+          "dimension": "account",
+          "key": "ACC-0032",
+          "share": 0.004680870939453814
+        },
+        {
+          "children": [],
+          "delta": 114775.90999999736,
+          "dimension": "account",
+          "key": "ACC-0023",
+          "share": -0.004308036469747779
+        },
+        {
+          "children": [],
+          "delta": -108092.43999999994,
+          "dimension": "account",
+          "key": "ACC-0033",
+          "share": 0.0040571769252278995
+        },
+        {
+          "children": [],
+          "delta": -93948.2899999991,
+          "dimension": "account",
+          "key": "ACC-0013",
+          "share": 0.003526285782360132
+        },
+        {
+          "children": [],
+          "delta": -81665.1799999997,
+          "dimension": "account",
+          "key": "ACC-0034",
+          "share": 0.0030652475223112916
+        },
+        {
+          "children": [],
+          "delta": 69666.81000000238,
+          "dimension": "account",
+          "key": "ACC-0007",
+          "share": -0.0026148967863640245
+        },
+        {
+          "children": [],
+          "delta": -67167.55000000261,
+          "dimension": "account",
+          "key": "ACC-0010",
+          "share": 0.0025210887457448638
+        },
+        {
+          "children": [],
+          "delta": -66044.27000000048,
+          "dimension": "account",
+          "key": "ACC-0037",
+          "share": 0.0024789271875768864
+        },
+        {
+          "children": [],
+          "delta": 63654.5400000019,
+          "dimension": "account",
+          "key": "ACC-0049",
+          "share": -0.00238923028172927
+        },
+        {
+          "children": [],
+          "delta": -61344.84999999963,
+          "dimension": "account",
+          "key": "ACC-0040",
+          "share": 0.002302537623367234
+        },
+        {
+          "children": [],
+          "delta": -59421.90999999829,
+          "dimension": "account",
+          "key": "ACC-0021",
+          "share": 0.0022303613657436373
+        },
+        {
+          "children": [],
+          "delta": -57788.52999999933,
+          "dimension": "account",
+          "key": "ACC-0030",
+          "share": 0.0021690535476749126
+        },
+        {
+          "children": [],
+          "delta": -57128.56000000425,
+          "dimension": "account",
+          "key": "ACC-0006",
+          "share": 0.002144282018275422
+        },
+        {
+          "children": [],
+          "delta": 56480.890000000596,
+          "dimension": "account",
+          "key": "ACC-0018",
+          "share": -0.0021199721610904313
+        },
+        {
+          "children": [],
+          "delta": -56471.18999999948,
+          "dimension": "account",
+          "key": "ACC-0005",
+          "share": 0.002119608078124229
+        },
+        {
+          "children": [],
+          "delta": -54212.56000000425,
+          "dimension": "account",
+          "key": "ACC-0015",
+          "share": 0.0020348319224688643
+        },
+        {
+          "children": [],
+          "delta": -54043.23999999836,
+          "dimension": "account",
+          "key": "ACC-0038",
+          "share": 0.002028476610321193
+        },
+        {
+          "children": [],
+          "delta": -46544.51999999955,
+          "dimension": "account",
+          "key": "ACC-0024",
+          "share": 0.0017470172061969068
+        },
+        {
+          "children": [],
+          "delta": -45186.069999998435,
+          "dimension": "account",
+          "key": "ACC-0031",
+          "share": 0.0016960287004875309
+        },
+        {
+          "children": [],
+          "delta": -40389.2200000016,
+          "dimension": "account",
+          "key": "ACC-0048",
+          "share": 0.0015159821668560705
+        },
+        {
+          "children": [],
+          "delta": 39265.569999998435,
+          "dimension": "account",
+          "key": "ACC-0044",
+          "share": -0.0014738067209872827
+        },
+        {
+          "children": [],
+          "delta": -34467.859999999404,
+          "dimension": "account",
+          "key": "ACC-0025",
+          "share": 0.0012937279078350287
+        },
+        {
+          "children": [],
+          "delta": -33077.72000000253,
+          "dimension": "account",
+          "key": "ACC-0019",
+          "share": 0.0012415499393219336
+        },
+        {
+          "children": [],
+          "delta": -32157.800000000745,
+          "dimension": "account",
+          "key": "ACC-0045",
+          "share": 0.0012070213617723575
+        },
+        {
+          "children": [],
+          "delta": 31348.810000000987,
+          "dimension": "account",
+          "key": "ACC-0042",
+          "share": -0.0011766564670513285
+        },
+        {
+          "children": [],
+          "delta": 27261.16000000015,
+          "dimension": "account",
+          "key": "ACC-0036",
+          "share": -0.0010232292777084733
+        },
+        {
+          "children": [],
+          "delta": 26730.590000000084,
+          "dimension": "account",
+          "key": "ACC-0029",
+          "share": -0.0010033146901460273
+        },
+        {
+          "children": [],
+          "delta": -26037.389999998733,
+          "dimension": "account",
+          "key": "ACC-0027",
+          "share": 0.0009772958950797538
+        },
+        {
+          "children": [],
+          "delta": -20204.470000000438,
+          "dimension": "account",
+          "key": "ACC-0035",
+          "share": 0.0007583611718864073
+        },
+        {
+          "children": [],
+          "delta": 19608.250000001863,
+          "dimension": "account",
+          "key": "ACC-0004",
+          "share": -0.0007359824557953134
+        },
+        {
+          "children": [],
+          "delta": -18736.789999999106,
+          "dimension": "account",
+          "key": "ACC-0009",
+          "share": 0.0007032727917034464
+        },
+        {
+          "children": [],
+          "delta": 18698.369999997318,
+          "dimension": "account",
+          "key": "ACC-0039",
+          "share": -0.0007018307228827729
+        },
+        {
+          "children": [],
+          "delta": 18200.620000000577,
+          "dimension": "account",
+          "key": "ACC-0022",
+          "share": -0.0006831480119131717
+        },
+        {
+          "children": [],
+          "delta": -16486.06000000052,
+          "dimension": "account",
+          "key": "ACC-0003",
+          "share": 0.0006187931572265814
+        },
+        {
+          "children": [],
+          "delta": -16248.699999997392,
+          "dimension": "account",
+          "key": "ACC-0008",
+          "share": 0.0006098840095101936
+        },
+        {
+          "children": [],
+          "delta": -14214.209999999963,
+          "dimension": "account",
+          "key": "ACC-0028",
+          "share": 0.0005335207977758995
+        },
+        {
+          "children": [],
+          "delta": -13453.669999999925,
+          "dimension": "account",
+          "key": "ACC-0011",
+          "share": 0.0005049744411693414
+        },
+        {
+          "children": [],
+          "delta": -12162.650000000373,
+          "dimension": "account",
+          "key": "ACC-0041",
+          "share": 0.0004565168750897348
+        },
+        {
+          "children": [],
+          "delta": 10452.150000000605,
+          "dimension": "account",
+          "key": "ACC-0046",
+          "share": -0.000392314409768373
+        },
+        {
+          "children": [],
+          "delta": -7121.329999999609,
+          "dimension": "account",
+          "key": "ACC-0020",
+          "share": 0.0002672943246810936
+        },
+        {
+          "children": [],
+          "delta": -2878.2899999995716,
+          "dimension": "account",
+          "key": "ACC-0026",
+          "share": 0.00010803467635768496
+        }
+      ],
+      "kpi": [
+        {
+          "children": [],
+          "delta": -23569368.160000004,
+          "dimension": "kpi",
+          "key": "gross_renewal_rate",
+          "share": 0.8846603577544667
+        },
+        {
+          "children": [],
+          "delta": -3455572.570000003,
+          "dimension": "kpi",
+          "key": "non_recurring",
+          "share": 0.12970258876989446
+        },
+        {
+          "children": [],
+          "delta": 382661.6299999985,
+          "dimension": "kpi",
+          "key": "expansion_arr",
+          "share": -0.014362946524346115
+        },
+        {
+          "children": [],
+          "delta": 0.0,
+          "dimension": "kpi",
+          "key": "new_business_arr",
+          "share": -0.0
+        }
+      ],
+      "segment": [
+        {
+          "children": [
+            {
+              "children": [],
+              "delta": -15036255.700000001,
+              "dimension": "account",
+              "key": "ACC-0001",
+              "share": 0.5824270542623278
+            },
+            {
+              "children": [],
+              "delta": -10610321.879999997,
+              "dimension": "account",
+              "key": "ACC-0002",
+              "share": 0.4109891877765501
+            }
+          ],
+          "delta": -25816547.48000014,
+          "dimension": "segment",
+          "key": "enterprise",
+          "share": 0.9690067198492984
+        },
+        {
+          "children": [],
+          "delta": -713256.4699999988,
+          "dimension": "segment",
+          "key": "mid_market",
+          "share": 0.0267716011578007
+        },
+        {
+          "children": [],
+          "delta": -112475.15000006184,
+          "dimension": "segment",
+          "key": "smb",
+          "share": 0.004221678992923076
+        }
+      ]
+    },
+    "footprint": {
+      "delta": -25646577.58,
+      "entities": {
+        "account_id": [
+          "ACC-0001",
+          "ACC-0002"
+        ]
+      },
+      "window_end": "2026-04-30",
+      "window_start": "2026-03-01"
+    },
+    "hhi": 0.4774667420183365,
+    "kpi": "net_revenue",
+    "period": "2026-04",
+    "pvm": {
+      "mix": -837926.6510228664,
+      "price": 7277084.215471026,
+      "volume": -33081436.664448164
+    },
+    "total_delta": -26642279.099999607
+  },
+  "hypotheses": [
+    {
+      "driver_id": "integration_delay",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 1,
+      "rationale": "no annotation returned for this registry driver"
+    },
+    {
+      "driver_id": "pricing_change",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 2,
+      "rationale": "no annotation returned for this registry driver"
+    },
+    {
+      "driver_id": "competitor_offer",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 3,
+      "rationale": "no annotation returned for this registry driver"
+    },
+    {
+      "driver_id": "seasonality",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 4,
+      "rationale": "no annotation returned for this registry driver"
+    },
+    {
+      "driver_id": "supply_delay",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 5,
+      "rationale": "no annotation returned for this registry driver"
+    }
+  ],
+  "id": "case-2026-04-net_revenue-east",
+  "ledger": [
+    {
+      "claim": "ACC-0001's ticket volume rose 4.0x against its prior-period baseline",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-001",
+      "kind": "statistic",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "tickets:ACC-0001:2026-03-01:2026-04-30",
+        "system": "product_ops",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.9918032786885246,
+      "supports": [
+        "integration_delay"
+      ]
+    },
+    {
+      "claim": "ACC-0002's ticket volume rose 3.9x against its prior-period baseline",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-002",
+      "kind": "statistic",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "tickets:ACC-0002:2026-03-01:2026-04-30",
+        "system": "product_ops",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.9719626168224299,
+      "supports": [
+        "integration_delay"
+      ]
+    },
+    {
+      "claim": "PRD-CORE's list price for enterprise changed to 432480 on 2026-03-01",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-001",
+      "kind": "fact",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:PRD-CORE:2026-03-01",
+        "system": "billing",
+        "timestamp": "2026-03-01T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "PRD-EDGE's list price for enterprise changed to 497140 on 2026-03-01",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-002",
+      "kind": "fact",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:PRD-EDGE:2026-03-01",
+        "system": "billing",
+        "timestamp": "2026-03-01T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "PRD-FLOW's list price for enterprise changed to 225780 on 2026-03-01",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-003",
+      "kind": "fact",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:PRD-FLOW:2026-03-01",
+        "system": "billing",
+        "timestamp": "2026-03-01T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "PRD-GUARD's list price for enterprise changed to 450500 on 2026-03-01",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-004",
+      "kind": "fact",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:PRD-GUARD:2026-03-01",
+        "system": "billing",
+        "timestamp": "2026-03-01T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "PRD-INSIGHT's list price for enterprise changed to 409160 on 2026-03-01",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-005",
+      "kind": "fact",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:PRD-INSIGHT:2026-03-01",
+        "system": "billing",
+        "timestamp": "2026-03-01T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "PRD-SYNC's list price for enterprise changed to 314820 on 2026-03-01",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-006",
+      "kind": "fact",
+      "method": "sql",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:PRD-SYNC:2026-03-01",
+        "system": "billing",
+        "timestamp": "2026-03-01T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "0 of 2 populated lost-reason fields name a competitor",
+      "contradicts": [
+        "competitor_offer"
+      ],
+      "coverage": null,
+      "denominator": 2,
+      "freshness_hours": 30.0,
+      "id": "ev-competitor_offer-001",
+      "kind": "absence",
+      "method": "sql",
+      "outcome": "checked_absent",
+      "quote": null,
+      "source": {
+        "record_id": "opportunity:lost_reason_code",
+        "system": "crm",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.8,
+      "supports": []
+    },
+    {
+      "claim": "no incident on record overlaps this footprint's accounts and window",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-supply_delay-001",
+      "kind": "absence",
+      "method": "sql",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "incident:none",
+        "system": "product_ops",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "supply_delay"
+      ]
+    },
+    {
+      "claim": "15 retrieved document(s) were read; none bear on integration_delay",
+      "contradicts": [
+        "integration_delay"
+      ],
+      "coverage": null,
+      "denominator": 15,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-doc-000",
+      "kind": "absence",
+      "method": "llm_extraction",
+      "outcome": "checked_absent",
+      "quote": null,
+      "source": {
+        "record_id": "integration_delay:no_claims_extracted",
+        "system": "corpus",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.5,
+      "supports": []
+    },
+    {
+      "claim": "no documents on this footprint's price_book, crm_notes sources fall inside the lag window",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-doc-000",
+      "kind": "absence",
+      "method": "retrieval",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "pricing_change:no_documents",
+        "system": "corpus",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "no documents on this footprint's crm_lost_reason, news, crm_notes sources fall inside the lag window",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-competitor_offer-doc-000",
+      "kind": "absence",
+      "method": "retrieval",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "competitor_offer:no_documents",
+        "system": "corpus",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "no documents on this footprint's incident, deploy_log sources fall inside the lag window",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-supply_delay-doc-000",
+      "kind": "absence",
+      "method": "retrieval",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "supply_delay:no_documents",
+        "system": "corpus",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "supply_delay"
+      ]
+    },
+    {
+      "claim": "onset 2026-03-12; lag(s) [21, 23] days, within 45",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-timing-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "timing:integration_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.7,
+      "supports": [
+        "integration_delay"
+      ]
+    },
+    {
+      "claim": "J=1.000 over 2 cause and 2 effect account(s)",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-locality-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "locality:integration_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 1.0,
+      "supports": [
+        "integration_delay"
+      ]
+    },
+    {
+      "claim": "n = 2 paired observations, below the n >= 5 minimum for Spearman \u2014 the test cannot pass here, which is why the verdict cannot be Confirmed",
+      "contradicts": [],
+      "coverage": 1.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-dose-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "dose:integration_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "integration_delay"
+      ]
+    },
+    {
+      "claim": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-integration_delay-control-001",
+      "kind": "statistic",
+      "method": "did",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "control:integration_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.9375,
+      "supports": [
+        "integration_delay"
+      ]
+    },
+    {
+      "claim": "onset 2026-03-01; lag(s) [32, 34] days, within 60",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-timing-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "timing:pricing_change",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.7,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "J=0.049 over 41 cause and 2 effect account(s)",
+      "contradicts": [
+        "pricing_change"
+      ],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-locality-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "locality:pricing_change",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.04878048780487805,
+      "supports": []
+    },
+    {
+      "claim": "pricing_change has no per-account intensity signal \u2014 dose does not apply",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-dose-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "dose:pricing_change",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-pricing_change-control-001",
+      "kind": "statistic",
+      "method": "did",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "control:pricing_change",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.9375,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "onset 2026-04-20; lag(s) [-18, -16] days against a 90-day window \u2014 at least one effect falls outside it",
+      "contradicts": [
+        "competitor_offer"
+      ],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-competitor_offer-timing-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "timing:competitor_offer",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.7,
+      "supports": []
+    },
+    {
+      "claim": "J=0.000 over 16 cause and 2 effect account(s)",
+      "contradicts": [
+        "competitor_offer"
+      ],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-competitor_offer-locality-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "locality:competitor_offer",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": []
+    },
+    {
+      "claim": "competitor_offer has no per-account intensity signal \u2014 dose does not apply",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-competitor_offer-dose-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "dose:competitor_offer",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-competitor_offer-control-001",
+      "kind": "statistic",
+      "method": "did",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "control:competitor_offer",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.9375,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "onset 2026-02-04; lag(s) [57, 59] days against a 30-day window \u2014 at least one effect falls outside it",
+      "contradicts": [
+        "supply_delay"
+      ],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-supply_delay-timing-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "timing:supply_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.7,
+      "supports": []
+    },
+    {
+      "claim": "no determinable footprint for supply_delay",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-supply_delay-locality-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "locality:supply_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "supply_delay"
+      ]
+    },
+    {
+      "claim": "supply_delay has no per-account intensity signal \u2014 dose does not apply",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-supply_delay-dose-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "dose:supply_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "supply_delay"
+      ]
+    },
+    {
+      "claim": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 30.0,
+      "id": "ev-supply_delay-control-001",
+      "kind": "statistic",
+      "method": "did",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "control:supply_delay",
+        "system": "stats",
+        "timestamp": "2026-04-30T00:00:00",
+        "url": null
+      },
+      "strength": 0.9375,
+      "supports": [
+        "supply_delay"
+      ]
+    }
+  ],
+  "open_question": {
+    "hypotheses_separated": [
+      "integration_delay"
+    ],
+    "owner_role": "vp_engineering",
+    "question": "Did integration delay actually influence the outcome for ACC-0001, ACC-0002? Ask the account owner(s).",
+    "value_at_stake": 25646577.58
+  },
+  "priority": 21313823.27999969,
+  "recommendation": {
+    "action": "Prioritise the integration fix for ACC-0001, ACC-0002.",
+    "confidence": "likely",
+    "driver_id": "integration_delay",
+    "expected_impact": [
+      19981709.324999705,
+      26642279.099999607
+    ],
+    "lever": "prioritise_integration_fix",
+    "monitoring": "net_revenue, East, daily; escalate if not recovered within 2 cycles",
+    "owner_role": "vp_engineering"
+  },
+  "telemetry": {
+    "calls": [
+      {
+        "cache_hit": false,
+        "cost_inr": 0.0,
+        "input_tokens": 0,
+        "latency_ms": 0.0,
+        "model": "stub",
+        "output_tokens": 0,
+        "stage": "s3"
+      },
+      {
+        "cache_hit": false,
+        "cost_inr": 0.0,
+        "input_tokens": 0,
+        "latency_ms": 0.0,
+        "model": "stub",
+        "output_tokens": 0,
+        "stage": "s4c"
+      }
+    ],
+    "stages": [
+      {
+        "stage": "s1_verify",
+        "used_model": false,
+        "wall_ms": 83.97408400196582
+      },
+      {
+        "stage": "s2_decompose",
+        "used_model": false,
+        "wall_ms": 683.2584170042537
+      },
+      {
+        "stage": "s3_hypothesise",
+        "used_model": true,
+        "wall_ms": 0.22041700140107423
+      },
+      {
+        "stage": "s4a_probes",
+        "used_model": false,
+        "wall_ms": 104.59145899221767
+      },
+      {
+        "stage": "s4c_extract",
+        "used_model": true,
+        "wall_ms": 58.29016599454917
+      },
+      {
+        "stage": "s5_challenge",
+        "used_model": false,
+        "wall_ms": 69.99229099892545
+      },
+      {
+        "stage": "s6_adjudicate",
+        "used_model": false,
+        "wall_ms": 0.07658300455659628
+      },
+      {
+        "stage": "s7_recommend",
+        "used_model": false,
+        "wall_ms": 0.015458004781976342
+      }
+    ]
+  },
+  "tests": {
+    "competitor_offer": {
+      "control": {
+        "detail": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+        "evidence_ids": [
+          "ev-competitor_offer-control-001"
+        ],
+        "outcome": "pass",
+        "statistic": -12811957.463333333
+      },
+      "dose": {
+        "detail": "competitor_offer has no per-account intensity signal \u2014 dose does not apply",
+        "evidence_ids": [
+          "ev-competitor_offer-dose-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "locality": {
+        "detail": "J=0.000 over 16 cause and 2 effect account(s)",
+        "evidence_ids": [
+          "ev-competitor_offer-locality-001"
+        ],
+        "outcome": "refute",
+        "statistic": 0.0
+      },
+      "timing": {
+        "detail": "onset 2026-04-20; lag(s) [-18, -16] days against a 90-day window \u2014 at least one effect falls outside it",
+        "evidence_ids": [
+          "ev-competitor_offer-timing-001"
+        ],
+        "outcome": "refute",
+        "statistic": -18.0
+      }
+    },
+    "integration_delay": {
+      "control": {
+        "detail": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+        "evidence_ids": [
+          "ev-integration_delay-control-001"
+        ],
+        "outcome": "pass",
+        "statistic": -12811957.463333333
+      },
+      "dose": {
+        "detail": "n = 2 paired observations, below the n >= 5 minimum for Spearman \u2014 the test cannot pass here, which is why the verdict cannot be Confirmed",
+        "evidence_ids": [
+          "ev-integration_delay-dose-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "locality": {
+        "detail": "J=1.000 over 2 cause and 2 effect account(s)",
+        "evidence_ids": [
+          "ev-integration_delay-locality-001"
+        ],
+        "outcome": "pass",
+        "statistic": 1.0
+      },
+      "timing": {
+        "detail": "onset 2026-03-12; lag(s) [21, 23] days, within 45",
+        "evidence_ids": [
+          "ev-integration_delay-timing-001"
+        ],
+        "outcome": "pass",
+        "statistic": 21.0
+      }
+    },
+    "pricing_change": {
+      "control": {
+        "detail": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+        "evidence_ids": [
+          "ev-pricing_change-control-001"
+        ],
+        "outcome": "pass",
+        "statistic": -12811957.463333333
+      },
+      "dose": {
+        "detail": "pricing_change has no per-account intensity signal \u2014 dose does not apply",
+        "evidence_ids": [
+          "ev-pricing_change-dose-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "locality": {
+        "detail": "J=0.049 over 41 cause and 2 effect account(s)",
+        "evidence_ids": [
+          "ev-pricing_change-locality-001"
+        ],
+        "outcome": "refute",
+        "statistic": 0.04878048780487805
+      },
+      "timing": {
+        "detail": "onset 2026-03-01; lag(s) [32, 34] days, within 60",
+        "evidence_ids": [
+          "ev-pricing_change-timing-001"
+        ],
+        "outcome": "pass",
+        "statistic": 32.0
+      }
+    },
+    "supply_delay": {
+      "control": {
+        "detail": "DiD -12,811,957; the real effect is rank 1 of 16 against 15 placebo assignments",
+        "evidence_ids": [
+          "ev-supply_delay-control-001"
+        ],
+        "outcome": "pass",
+        "statistic": -12811957.463333333
+      },
+      "dose": {
+        "detail": "supply_delay has no per-account intensity signal \u2014 dose does not apply",
+        "evidence_ids": [
+          "ev-supply_delay-dose-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "locality": {
+        "detail": "no determinable footprint for supply_delay",
+        "evidence_ids": [
+          "ev-supply_delay-locality-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "timing": {
+        "detail": "onset 2026-02-04; lag(s) [57, 59] days against a 30-day window \u2014 at least one effect falls outside it",
+        "evidence_ids": [
+          "ev-supply_delay-timing-001"
+        ],
+        "outcome": "refute",
+        "statistic": 59.0
+      }
+    }
+  },
+  "trigger": {
+    "delta": -26642279.099999607,
+    "delta_relative": -0.08465593267626345,
+    "dimensions": {
+      "region": "East"
+    },
+    "kpi": "net_revenue",
+    "period": "2026-04"
+  },
+  "verdict": {
+    "attribution": [
+      {
+        "driver_id": "integration_delay",
+        "eliminated_by": null,
+        "share": 0.9626270141431097,
+        "status": "primary"
+      },
+      {
+        "driver_id": "pricing_change",
+        "eliminated_by": null,
+        "share": -0.273140454244064,
+        "status": "minor"
+      },
+      {
+        "driver_id": "competitor_offer",
+        "eliminated_by": "timing",
+        "share": null,
+        "status": "eliminated"
+      },
+      {
+        "driver_id": "supply_delay",
+        "eliminated_by": "timing",
+        "share": null,
+        "status": "eliminated"
+      }
+    ],
+    "confidence": "likely"
+  },
+  "verification": {
+    "baseline": "own",
+    "checks": [
+      {
+        "detail": "billing watermark 4.0h old against a 26h SLA",
+        "name": "freshness",
+        "passed": true,
+        "statistic": 4.04
+      },
+      {
+        "detail": "100.0% of 4,943 records arrived inside the 26h SLA after period close",
+        "name": "completeness",
+        "passed": true,
+        "statistic": 1.0
+      },
+      {
+        "detail": "2026-04 does not straddle a definition epoch; nothing to recompute",
+        "name": "definition_drift",
+        "passed": true,
+        "statistic": null
+      },
+      {
+        "detail": "largest single record is 14% of the movement, under the 35% threshold; no refund batch, no period-boundary slippage",
+        "name": "artefact",
+        "passed": true,
+        "statistic": 0.1374
+      },
+      {
+        "detail": "robust z -26.86 over 3 periods; -8.47% and 26,642,279 clear the 3% and 2,500,000 thresholds",
+        "name": "materiality",
+        "passed": true,
+        "statistic": -26.861
+      }
+    ],
+    "confidence_ceiling": null,
+    "freshness_hours": 4.038333333333333,
+    "passed": true,
+    "persistence": 3,
+    "provisional": false,
+    "robust_z": -26.86126399934413
+  }
+}

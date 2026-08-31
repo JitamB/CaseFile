@@ -1,0 +1,596 @@
+{
+  "decomposition": {
+    "by_dimension": {
+      "account": [
+        {
+          "children": [],
+          "delta": -902000.0,
+          "dimension": "account",
+          "key": "ACC-0081",
+          "share": 0.25
+        },
+        {
+          "children": [],
+          "delta": -902000.0,
+          "dimension": "account",
+          "key": "ACC-0083",
+          "share": 0.25
+        },
+        {
+          "children": [],
+          "delta": -902000.0,
+          "dimension": "account",
+          "key": "ACC-0085",
+          "share": 0.25
+        },
+        {
+          "children": [],
+          "delta": -902000.0,
+          "dimension": "account",
+          "key": "ACC-0087",
+          "share": 0.25
+        }
+      ],
+      "segment": [
+        {
+          "children": [
+            {
+              "children": [],
+              "delta": -902000.0,
+              "dimension": "account",
+              "key": "ACC-0081",
+              "share": 0.25
+            },
+            {
+              "children": [],
+              "delta": -902000.0,
+              "dimension": "account",
+              "key": "ACC-0083",
+              "share": 0.25
+            },
+            {
+              "children": [],
+              "delta": -902000.0,
+              "dimension": "account",
+              "key": "ACC-0085",
+              "share": 0.25
+            },
+            {
+              "children": [],
+              "delta": -902000.0,
+              "dimension": "account",
+              "key": "ACC-0087",
+              "share": 0.25
+            }
+          ],
+          "delta": -3608000.0,
+          "dimension": "segment",
+          "key": "enterprise",
+          "share": 1.0
+        }
+      ]
+    },
+    "footprint": {
+      "delta": -3608000.0,
+      "entities": {
+        "account_id": [
+          "ACC-0081",
+          "ACC-0083",
+          "ACC-0085",
+          "ACC-0087"
+        ]
+      },
+      "window_end": "2025-10-31",
+      "window_start": "2025-09-01"
+    },
+    "hhi": 0.25,
+    "kpi": "new_business_arr",
+    "period": "2025-10",
+    "pvm": null,
+    "total_delta": -3608000.0
+  },
+  "hypotheses": [
+    {
+      "driver_id": "pricing_change",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 1,
+      "rationale": "no annotation returned for this registry driver"
+    },
+    {
+      "driver_id": "competitor_offer",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 2,
+      "rationale": "no annotation returned for this registry driver"
+    },
+    {
+      "driver_id": "seasonality",
+      "expected_signature": {
+        "control": null,
+        "dose": null,
+        "locality": null,
+        "timing": null
+      },
+      "priority": 3,
+      "rationale": "no annotation returned for this registry driver"
+    }
+  ],
+  "id": "case-2025-10-new_business_arr-north",
+  "ledger": [
+    {
+      "claim": "none of 12 recorded price changes for enterprise fall inside this window",
+      "contradicts": [
+        "pricing_change"
+      ],
+      "coverage": null,
+      "denominator": 12,
+      "freshness_hours": 4374.0,
+      "id": "ev-pricing_change-001",
+      "kind": "absence",
+      "method": "sql",
+      "outcome": "checked_absent",
+      "quote": null,
+      "source": {
+        "record_id": "price_book:enterprise",
+        "system": "billing",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.6,
+      "supports": []
+    },
+    {
+      "claim": "4 closed-lost opportunities on this footprint carry no lost-reason code",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-competitor_offer-001",
+      "kind": "absence",
+      "method": "sql",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "opportunity:lost_reason_code",
+        "system": "crm",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "no documents on this footprint's price_book, crm_notes sources fall inside the lag window",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-pricing_change-doc-000",
+      "kind": "absence",
+      "method": "retrieval",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "pricing_change:no_documents",
+        "system": "corpus",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "no documents on this footprint's crm_lost_reason, news, crm_notes sources fall inside the lag window",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-competitor_offer-doc-000",
+      "kind": "absence",
+      "method": "retrieval",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "competitor_offer:no_documents",
+        "system": "corpus",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "no determinable onset for pricing_change",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-pricing_change-timing-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "timing:pricing_change",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "J=0.000 over 0 cause and 4 effect account(s)",
+      "contradicts": [
+        "pricing_change"
+      ],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-pricing_change-locality-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "locality:pricing_change",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": []
+    },
+    {
+      "claim": "pricing_change has no per-account intensity signal \u2014 dose does not apply",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-pricing_change-dose-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "dose:pricing_change",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "DiD -902,000; the real effect is rank 1 of 6 against 5 placebo assignments",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-pricing_change-control-001",
+      "kind": "statistic",
+      "method": "did",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "control:pricing_change",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.8333333333333334,
+      "supports": [
+        "pricing_change"
+      ]
+    },
+    {
+      "claim": "no determinable onset for competitor_offer",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-competitor_offer-timing-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "timing:competitor_offer",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "no determinable footprint for competitor_offer",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-competitor_offer-locality-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "locality:competitor_offer",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "competitor_offer has no per-account intensity signal \u2014 dose does not apply",
+      "contradicts": [],
+      "coverage": 0.0,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-competitor_offer-dose-001",
+      "kind": "statistic",
+      "method": "stat_test",
+      "outcome": "uncheckable",
+      "quote": null,
+      "source": {
+        "record_id": "dose:competitor_offer",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.0,
+      "supports": [
+        "competitor_offer"
+      ]
+    },
+    {
+      "claim": "DiD -902,000; the real effect is rank 1 of 6 against 5 placebo assignments",
+      "contradicts": [],
+      "coverage": null,
+      "denominator": null,
+      "freshness_hours": 4374.0,
+      "id": "ev-competitor_offer-control-001",
+      "kind": "statistic",
+      "method": "did",
+      "outcome": "found",
+      "quote": null,
+      "source": {
+        "record_id": "control:competitor_offer",
+        "system": "stats",
+        "timestamp": "2025-10-31T00:00:00",
+        "url": null
+      },
+      "strength": 0.8333333333333334,
+      "supports": [
+        "competitor_offer"
+      ]
+    }
+  ],
+  "open_question": {
+    "hypotheses_separated": [
+      "competitor_offer"
+    ],
+    "owner_role": "vp_sales",
+    "question": "Did competitor offer actually influence the outcome for ACC-0081, ACC-0083, ACC-0085, ACC-0087? Ask the account owner(s).",
+    "value_at_stake": 3608000.0
+  },
+  "priority": 1443200.0,
+  "recommendation": null,
+  "telemetry": {
+    "calls": [
+      {
+        "cache_hit": false,
+        "cost_inr": 0.0,
+        "input_tokens": 0,
+        "latency_ms": 0.0,
+        "model": "stub",
+        "output_tokens": 0,
+        "stage": "s3"
+      }
+    ],
+    "stages": [
+      {
+        "stage": "s1_verify",
+        "used_model": false,
+        "wall_ms": 90.58737500163261
+      },
+      {
+        "stage": "s2_decompose",
+        "used_model": false,
+        "wall_ms": 203.71025000349618
+      },
+      {
+        "stage": "s3_hypothesise",
+        "used_model": true,
+        "wall_ms": 0.05716599116567522
+      },
+      {
+        "stage": "s4a_probes",
+        "used_model": false,
+        "wall_ms": 1.7036249919328839
+      },
+      {
+        "stage": "s4c_extract",
+        "used_model": false,
+        "wall_ms": 3.6593330005416647
+      },
+      {
+        "stage": "s5_challenge",
+        "used_model": false,
+        "wall_ms": 17.447165999328718
+      },
+      {
+        "stage": "s6_adjudicate",
+        "used_model": false,
+        "wall_ms": 0.0322920095641166
+      },
+      {
+        "stage": "s7_recommend",
+        "used_model": false,
+        "wall_ms": 0.00145800004247576
+      }
+    ]
+  },
+  "tests": {
+    "competitor_offer": {
+      "control": {
+        "detail": "DiD -902,000; the real effect is rank 1 of 6 against 5 placebo assignments",
+        "evidence_ids": [
+          "ev-competitor_offer-control-001"
+        ],
+        "outcome": "pass",
+        "statistic": -902000.0
+      },
+      "dose": {
+        "detail": "competitor_offer has no per-account intensity signal \u2014 dose does not apply",
+        "evidence_ids": [
+          "ev-competitor_offer-dose-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "locality": {
+        "detail": "no determinable footprint for competitor_offer",
+        "evidence_ids": [
+          "ev-competitor_offer-locality-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "timing": {
+        "detail": "no determinable onset for competitor_offer",
+        "evidence_ids": [
+          "ev-competitor_offer-timing-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      }
+    },
+    "pricing_change": {
+      "control": {
+        "detail": "DiD -902,000; the real effect is rank 1 of 6 against 5 placebo assignments",
+        "evidence_ids": [
+          "ev-pricing_change-control-001"
+        ],
+        "outcome": "pass",
+        "statistic": -902000.0
+      },
+      "dose": {
+        "detail": "pricing_change has no per-account intensity signal \u2014 dose does not apply",
+        "evidence_ids": [
+          "ev-pricing_change-dose-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      },
+      "locality": {
+        "detail": "J=0.000 over 0 cause and 4 effect account(s)",
+        "evidence_ids": [
+          "ev-pricing_change-locality-001"
+        ],
+        "outcome": "refute",
+        "statistic": 0.0
+      },
+      "timing": {
+        "detail": "no determinable onset for pricing_change",
+        "evidence_ids": [
+          "ev-pricing_change-timing-001"
+        ],
+        "outcome": "inconclusive",
+        "statistic": null
+      }
+    }
+  },
+  "trigger": {
+    "delta": -3608000.0,
+    "delta_relative": -0.6949152542372882,
+    "dimensions": {
+      "region": "North"
+    },
+    "kpi": "new_business_arr",
+    "period": "2025-10"
+  },
+  "verdict": {
+    "attribution": [
+      {
+        "driver_id": "competitor_offer",
+        "eliminated_by": null,
+        "share": 1.0,
+        "status": "unresolved"
+      },
+      {
+        "driver_id": "pricing_change",
+        "eliminated_by": "locality",
+        "share": null,
+        "status": "eliminated"
+      }
+    ],
+    "confidence": "undetermined"
+  },
+  "verification": {
+    "baseline": "own",
+    "checks": [
+      {
+        "detail": "crm watermark 5.0h old against a 24h SLA",
+        "name": "freshness",
+        "passed": true,
+        "statistic": 5.02
+      },
+      {
+        "detail": "100.0% of 92 records arrived inside the 24h SLA after period close",
+        "name": "completeness",
+        "passed": true,
+        "statistic": 1.0
+      },
+      {
+        "detail": "2025-10 does not straddle a definition epoch; nothing to recompute",
+        "name": "definition_drift",
+        "passed": true,
+        "statistic": null
+      },
+      {
+        "detail": "largest single record is 30% of the movement, under the 35% threshold; no refund batch, no period-boundary slippage",
+        "name": "artefact",
+        "passed": true,
+        "statistic": 0.3049
+      },
+      {
+        "detail": "robust z -6.52 over 2 periods; -69.49% and 3,608,000 clear the 12% and 1,500,000 thresholds",
+        "name": "materiality",
+        "passed": true,
+        "statistic": -6.518
+      }
+    ],
+    "confidence_ceiling": null,
+    "freshness_hours": 5.022222222222222,
+    "passed": true,
+    "persistence": 2,
+    "provisional": false,
+    "robust_z": -6.5178986957978475
+  }
+}

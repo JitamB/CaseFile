@@ -1,0 +1,71 @@
+{
+  "decomposition": null,
+  "hypotheses": [],
+  "id": "case-2026-03-net_revenue-west",
+  "ledger": [],
+  "open_question": null,
+  "priority": 0.0,
+  "recommendation": null,
+  "telemetry": {
+    "calls": [],
+    "stages": [
+      {
+        "stage": "s1_verify",
+        "used_model": false,
+        "wall_ms": 70.84366600611247
+      }
+    ]
+  },
+  "tests": {},
+  "trigger": {
+    "delta": -11253877.090000004,
+    "delta_relative": -0.05886323823437377,
+    "dimensions": {
+      "region": "West"
+    },
+    "kpi": "net_revenue",
+    "period": "2026-03"
+  },
+  "verdict": null,
+  "verification": {
+    "baseline": "own",
+    "checks": [
+      {
+        "detail": "billing watermark 4.0h old against a 26h SLA",
+        "name": "freshness",
+        "passed": true,
+        "statistic": 4.04
+      },
+      {
+        "detail": "100.0% of 5,026 records arrived inside the 26h SLA after period close",
+        "name": "completeness",
+        "passed": true,
+        "statistic": 1.0
+      },
+      {
+        "detail": "2026-03 does not straddle a definition epoch; nothing to recompute",
+        "name": "definition_drift",
+        "passed": true,
+        "statistic": null
+      },
+      {
+        "detail": "one record (credit_note) is 71% of the movement, over the 35% single-record threshold \u2014 this is a batch, not a trend",
+        "name": "artefact",
+        "passed": false,
+        "statistic": 0.71
+      },
+      {
+        "detail": "robust z -16.92 over 2 periods; -5.89% and 11,253,877 clear the 3% and 2,500,000 thresholds",
+        "name": "materiality",
+        "passed": true,
+        "statistic": -16.917
+      }
+    ],
+    "confidence_ceiling": null,
+    "freshness_hours": 4.038333333333333,
+    "passed": false,
+    "persistence": 2,
+    "provisional": false,
+    "robust_z": -16.916990802107556
+  }
+}
