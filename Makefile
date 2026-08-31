@@ -25,10 +25,13 @@ corpus:
 	python -m casefile.data.generator
 	python -m casefile.data.corpus
 
-# Not yet implemented. Fails loudly rather than succeeding vacuously — a target
-# that prints nothing and exits 0 reads as "it worked".
-demo:
-	@echo "make demo arrives at ladder step 3.1 — src/casefile/orchestrator.py" >&2; exit 1
+# §10's own worked example: Net Revenue, East, 2026-04. Depends on `data` so
+# the warehouse is never stale — regeneration is fast and deterministic (same
+# seed, same bytes). Needs a recorded response in llm_cache/ for this exact
+# prompt, or CASEFILE_LLM_REPLAY=false plus a real ANTHROPIC_API_KEY; orchestrator.py
+# fails loudly, not silently, when neither is available.
+demo: data
+	python -m casefile.orchestrator
 
 test:
 	pytest -q

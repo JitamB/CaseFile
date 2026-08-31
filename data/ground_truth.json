@@ -91,6 +91,86 @@
       "scenario": "A",
       "true_driver": "integration_delay"
     },
+    "B": {
+      "closes_at": "adjudicate",
+      "description": "Low confidence \u2014 a competitor is the true cause of a new-business shortfall, but the lost-reason field was never populated for it.",
+      "dimensions": {
+        "region": "North"
+      },
+      "events": [
+        {
+          "accounts": [
+            "ACC-0080",
+            "ACC-0081",
+            "ACC-0082",
+            "ACC-0083",
+            "ACC-0084",
+            "ACC-0085",
+            "ACC-0086",
+            "ACC-0087"
+          ],
+          "deal_value": 1100000.0,
+          "driver_id": "competitor_offer",
+          "killed_by": null,
+          "onset": "2025-09-01",
+          "role": "true_cause"
+        }
+      ],
+      "expected_verdict": "undetermined",
+      "expected_verdict_reason": "lost-reason fields on this footprint are unpopulated \u2014 coverage \u2248 0 on the source that would identify the cause, not a checked and empty field",
+      "footprint_accounts": [
+        "ACC-0080",
+        "ACC-0081",
+        "ACC-0082",
+        "ACC-0083",
+        "ACC-0084",
+        "ACC-0085",
+        "ACC-0086",
+        "ACC-0087"
+      ],
+      "kpi": "new_business_arr",
+      "period": "2025-10",
+      "scenario": "B",
+      "true_driver": "competitor_offer"
+    },
+    "C": {
+      "closes_at": "adjudicate",
+      "description": "Sparse history \u2014 a real supply delay degrading P1 resolution time, on a KPI with under two seasonal cycles of history.",
+      "dimensions": {
+        "region": "APAC"
+      },
+      "events": [
+        {
+          "accounts": [
+            "ACC-0105",
+            "ACC-0106",
+            "ACC-0107",
+            "ACC-0108",
+            "ACC-0109",
+            "ACC-0110"
+          ],
+          "driver_id": "supply_delay",
+          "killed_by": null,
+          "multiplier": 4.0,
+          "onset": "2026-01-01",
+          "role": "true_cause"
+        }
+      ],
+      "expected_verdict": "likely",
+      "expected_verdict_reason": "baseline is borrowed from peer regions \u2014 confidence_ceiling = Likely applies regardless of what the four tests find",
+      "footprint_accounts": [
+        "ACC-0105",
+        "ACC-0106",
+        "ACC-0107",
+        "ACC-0108",
+        "ACC-0109",
+        "ACC-0110"
+      ],
+      "kpi": "p1_resolution_time",
+      "period": "2026-01",
+      "scenario": "C",
+      "true_driver": "supply_delay"
+    },
     "D": {
       "account": "ACC-0051",
       "closes_at": "verify",
