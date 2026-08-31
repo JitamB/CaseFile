@@ -3,6 +3,7 @@ import { CaseFile } from './CaseFile'
 import { CaseList } from './CaseList'
 import { PersonaSwitcher } from './PersonaSwitcher'
 import { Ledger } from './blocks/Ledger'
+import { TelemetryPanel } from './blocks/TelemetryPanel'
 import type { Case, EntitledView } from './types'
 import caseEast from '@fixtures/case_east_8pct.json'
 import entitledEast from '@fixtures/case_east_8pct_entitled.json'
@@ -55,6 +56,7 @@ export function App() {
       </button>
       <CaseFile case={selected} />
       <Ledger ledger={selected.ledger} />
+      <TelemetryPanel telemetry={selected.telemetry} />
       <button type="button" className="persona-link" onClick={() => setScreen('persona')}>
         View as another persona →
       </button>

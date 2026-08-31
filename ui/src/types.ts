@@ -100,6 +100,27 @@ export interface Attribution {
   eliminated_by: string | null
 }
 
+export interface Usage {
+  stage: string
+  model: string
+  input_tokens: number
+  output_tokens: number
+  latency_ms: number
+  cost_inr: number
+  cache_hit: boolean
+}
+
+export interface StageTiming {
+  stage: string
+  wall_ms: number
+  used_model: boolean
+}
+
+export interface Telemetry {
+  calls: Usage[]
+  stages: StageTiming[]
+}
+
 export interface Case {
   id: string
   trigger: Trigger
@@ -125,6 +146,7 @@ export interface Case {
     hypotheses_separated: string[]
   } | null
   priority: number
+  telemetry: Telemetry
 }
 
 export const TEST_NAMES = ['timing', 'locality', 'dose', 'control'] as const
