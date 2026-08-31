@@ -47,6 +47,13 @@ def east(con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]) -> C
     return decompose(con, contracts["net_revenue"], "2026-04", {"region": "East"})
 
 
+@pytest.fixture(scope="module")
+def north(con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract]) -> ContributionTree:
+    """Scenario B — a real competitor-driven shortfall the sources cannot see:
+    no news item names the competitor at all, anywhere, ever."""
+    return decompose(con, contracts["new_business_arr"], "2025-10", {"region": "North"})
+
+
 def a_hypothesis(driver_id: str) -> Hypothesis:
     return Hypothesis(
         driver_id=driver_id, rationale="test fixture", priority=1,
@@ -118,6 +125,22 @@ def test_control_reports_a_placebo_rank(
     control = matrices["integration_delay"].control
     assert "rank" in control.detail
     assert control.statistic is not None
+
+
+def test_a_source_with_no_coverage_at_all_is_inconclusive_not_refuted(
+    con: duckdb.DuckDBPyConnection, contracts: dict[str, KPIContract], north: ContributionTree
+) -> None:
+    """Scenario B's real, true cause: no competitor-tagged news item exists
+    anywhere in the corpus for it, not just outside the window. Locality must
+    read that as 'nothing to check' — an empty cause footprint scored as
+    `J=0.0` would refute the true cause on a source that was never checkable
+    at all, which is exactly the "confidently wrong" failure this project's
+    whole design exists to prevent."""
+    contract = contracts["new_business_arr"]
+    matrices, _items = challenge(contract, [a_hypothesis("competitor_offer")], north, con)
+    locality = matrices["competitor_offer"].locality
+    assert locality.outcome == "inconclusive"
+    assert locality.statistic is None
 
 
 def test_the_true_cause_survives_timing_and_locality(
