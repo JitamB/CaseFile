@@ -140,10 +140,11 @@ def test_an_unknown_model_class_is_rejected_at_construction() -> None:
         AnthropicProvider(model_class="haiku3")
 
 
-def test_every_priced_model_class_but_stub_has_a_live_model_id() -> None:
-    """A price with nowhere to call, or a model nothing prices, is a budget
-    figure §19 cannot actually stand behind."""
-    assert set(MODEL_IDS) == set(PRICES) - {"stub"}
+def test_every_anthropic_model_class_has_a_live_price() -> None:
+    """A model nothing prices is a budget figure §19 cannot actually stand
+    behind. `PRICES` is shared across all three providers now — Gemini's and
+    Groq's own test files assert this same thing for their own MODEL_IDS."""
+    assert set(MODEL_IDS) <= set(PRICES)
 
 
 def test_model_class_from_env_defaults_to_sonnet(monkeypatch: pytest.MonkeyPatch) -> None:
