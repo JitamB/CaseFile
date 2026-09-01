@@ -22,18 +22,20 @@ returned text back into `schema` with `model_validate_json`, the same
 `GeminiResponseError` rather than handing a caller `None` to guess about,
 mirroring `AnthropicResponseError`.
 
-**Untested against a live endpoint** — same honest gap `anthropic_provider.py`
-states in its own docstring: no key or network reaches Google's API in this
-build environment. `tests/test_gemini_provider.py` verifies this module's own
-logic (usage accounting, the request it builds, the error path) against a
-fabricated SDK response, not the wire behaviour. Additionally untested for
-real: whether Gemini's structured-output mode round-trips the *nested*
-schemas this project's own S3/S4c calls actually use (`HypothesiseResponse`
-nests `Hypothesis`, which nests `Signature`; `ExtractionResponse` nests
-`ExtractedClaim`) — `response_json_schema` is documented to accept an
-OpenAPI-3.0-style schema including `$defs`/`$ref`, but that has only been
-checked against the docs, not a live call. `NarrationResponse` (S8b) is flat
-and has no such open question.
+**Verified live, same session this shipped.** Against a real key:
+`gemini-3.5-flash` correctly round-trips `HypothesiseResponse` — the nested
+schema (`Hypothesis` nesting `Signature`) this project's own S3 call actually
+sends — with zero schema transformation, unlike Groq (see
+`groq_provider.py`'s own docstring for the real bug that needed). Two of the
+three original model ids were wrong, caught the same way: `gemini-2.5-pro`
+and `gemini-2.5-flash-lite` both 404 — Google's own error names the
+replacement (`gemini-3.1-pro-preview`, `gemini-3.5-flash-lite`), confirmed
+live in turn. `gemini-3.7-flash` (the "flash" default) returned repeated
+503s under real load during this same session — a real, current model
+(503, not 404), and §DECISIONS.md logs the live evidence rather than
+guessing whether that was a one-off. `tests/test_gemini_provider.py` still
+only covers what can run without a key (data invariants, the "no extra
+installed" guard) — it does not replay this session's live calls.
 """
 
 from __future__ import annotations
@@ -44,15 +46,17 @@ from casefile.llm.base import Prompt, T
 from casefile.llm.pricing import cost_inr
 from casefile.models import Usage
 
-#: §19-style tiers, mapped to Gemini's own model ids — verified against
-#: ai.google.dev/gemini-api/docs/pricing (fetched 2026-08-31), not assumed.
+#: §19-style tiers, mapped to Gemini's own model ids. "flash" and "lite" are
+#: confirmed live and working this session; "pro" is confirmed live and
+#: *reachable* (a 429 quota error, not 404 — this key is simply on the free
+#: tier, which has zero quota for this model; a paid key would not hit this).
 #: "flash" note: 3.7 Flash is discount-priced through 2026-12-31 and doubles
 #: to $1.50/$7.50 on 2027-01-01 — `pricing.PRICES`'s entry is today's rate,
 #: update both together when that date arrives.
 MODEL_IDS: dict[str, str] = {
-    "gemini-pro": "gemini-2.5-pro",
+    "gemini-pro": "gemini-3.1-pro-preview",
     "gemini-flash": "gemini-3.7-flash",
-    "gemini-lite": "gemini-2.5-flash-lite",
+    "gemini-lite": "gemini-3.5-flash-lite",
 }
 
 DEFAULT_MODEL_CLASS = "gemini-flash"

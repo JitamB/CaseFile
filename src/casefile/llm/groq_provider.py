@@ -11,20 +11,27 @@ for `groq.*`.
 **Schema enforcement** uses Groq's strict structured-output mode —
 `response_format={"type": "json_schema", "json_schema": {"strict": True,
 "schema": ...}}` — verified against console.groq.com/docs/structured-outputs
-and /docs/api-reference (fetched 2026-08-31), not assumed. Strict mode
-requires `additionalProperties: false` on every object in the schema, which
-Pydantic's own `model_json_schema()` does not set by default; `_strict()`
-below walks the schema and adds it, the same guardrail-not-guesswork
-discipline `evidence.py`'s own quote-verification uses for the model's
-*content* — this is verifying the model's *shape* instead.
+and /docs/api-reference (fetched 2026-08-31), not assumed. Strict mode needs
+two things Pydantic's own `model_json_schema()` does not produce by default,
+on *every* object in the schema, `$defs` included: `additionalProperties:
+false`, and `required` listing *every* property key — Pydantic only lists a
+field as required when it has no default, so an `Optional[str] = None`
+field (`Signature`'s own four fields, for one) is silently left out. Strict
+mode has no concept of "optional but present in the schema" — a nullable
+type is how you spell that instead. `_strict()` below adds both, the same
+guardrail-not-guesswork discipline `evidence.py`'s own quote-verification
+uses for the model's *content* — this is verifying the model's *shape*
+instead.
 
-**Untested against a live endpoint** — the same honest gap
-`anthropic_provider.py` and `gemini_provider.py` both state: no key or
-network reaches Groq's API here. `tests/test_groq_provider.py` verifies this
-module's own logic against a fabricated SDK response. Also untested for
-real, same open question as Gemini's: strict mode's `$ref` support against
-this project's *nested* schemas (`HypothesiseResponse`, `ExtractionResponse`)
-— Groq's docs demonstrate strict mode on a flat schema only.
+**This was a real bug, caught live, not assumed away**: the first version
+of `_strict()` added `additionalProperties` only. It shipped, then a live
+call against `HypothesiseResponse` (which nests `Signature`) failed with
+Groq's own `400 invalid JSON schema for response_format`, naming exactly
+the missing `required` keys. Fixed same-day; see `docs/DECISIONS.md`.
+
+Gemini's structured-output mode has no such requirement — confirmed live,
+same session, against the same nested schema, with no schema
+transformation at all.
 """
 
 from __future__ import annotations
@@ -66,11 +73,16 @@ class GroqResponseError(RuntimeError):
 
 
 def _strict(schema: dict[str, Any]) -> dict[str, Any]:
-    """Every object in the schema needs `additionalProperties: false` for
-    Groq's strict mode — walks `$defs` too, since a nested Pydantic model
-    (§ this module's own docstring) lands there, not inline."""
+    """Every object in the schema needs `additionalProperties: false` *and*
+    every one of its own property names listed in `required` for Groq's
+    strict mode — Pydantic's own defaults-based `required` list is not
+    enough (module docstring). Walks `$defs` too, since a nested Pydantic
+    model lands there, not inline."""
     if schema.get("type") == "object":
         schema.setdefault("additionalProperties", False)
+        properties = schema.get("properties")
+        if properties:
+            schema["required"] = list(properties.keys())
     for value in schema.values():
         if isinstance(value, dict):
             _strict(value)
