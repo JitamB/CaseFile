@@ -78,6 +78,43 @@ Entitlement runs on the `Case` object *before* narration. This test is what prov
 - **Golden regression:** `fixtures/case_east_8pct.json` is the expected output. Any diff in a
   numeric field fails CI.
 
+### 35.6 The materiality gate's false-alarm rate — *measured, not asserted*
+`stats/materiality.py::assess()`'s own docstring already states one measurement over the
+real corpus: four regions × the trailing twelve periods, and the gate opens exactly
+three of the 48 — the three sealed scenarios (§25 A, D, E; a fourth, West's April, is a
+real movement Verify itself closes as an artefact). That is one seed's worth of one
+hand-authored narrative, not evidence about how often the gate cries wolf on data with
+nothing wrong in it.
+
+`tools/calibrate_materiality.py` measures that directly, the way an independently
+reviewed open-source project (Automated Data Analyst) calibrates its own anomaly
+band — [docs/ada-integration-plan.md](ada-integration-plan.md)'s ADA-2: simulate many
+*stable* series (a fixed seasonal shape plus noise, nothing worth flagging in any
+period) and run the real `assess()` at each contract's actual thresholds. No generator,
+no warehouse — `assess()` is a pure function of a series and four thresholds, so that
+is what gets simulated. Each contract's simulated level is `absolute ÷ relative`, the
+scale at which its own two business thresholds coincide, so no contract is trivially
+always-blocked or always-cleared by the absolute condition alone.
+
+**Measured, 3,000 trials per contract:**
+
+| Contract | False-alarm rate |
+|---|---|
+| expansion_arr | 0.07% |
+| gross_renewal_rate | 0.27% |
+| net_revenue | 0.43% |
+| new_business_arr | 0.00% |
+| nrr | 0.43% |
+| p1_resolution_time | 0.00% |
+
+Every contract sits an order of magnitude under the 5% figure ADA targets for its own
+unrelated detector — the dominant filter is `min_persistence ≥ 2`: under independent
+monthly noise, two consecutive periods both crossing a 3σ robust-z bar in the same
+direction is rare on its own, before the relative and absolute conditions are even
+checked. `tests/test_materiality.py::test_the_gate_rarely_fires_on_genuinely_stable_data`
+is a fast, seeded regression check on this property (500 trials, a 5% bound) — it
+guards the property this table measured, not a re-run of the measurement itself.
+
 ---
 
 ## 36. Risks and Mitigations
