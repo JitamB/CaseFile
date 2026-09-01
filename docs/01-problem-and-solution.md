@@ -360,6 +360,11 @@ without a model.
 09:20  Analyst marks the verdict → feedback adjusts driver priors for next time
 ```
 
+The `06:00`/`07:00` mechanics above are real, tested code, not narrative —
+[docs/continuous-operation-plan.md](continuous-operation-plan.md) builds and verifies the scan
+that finds "which slices to check," the scheduler that fires it on a cadence, and the case
+store the 09:00 digest would read from.
+
 ---
 
 ## 12. How Each Component Answers the Problem

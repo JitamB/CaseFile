@@ -4,7 +4,7 @@
 # same order. If those two ever disagree, fixing the divergence outranks every
 # other task in the project.
 
-.PHONY: setup data corpus demo test check gate0 gate1 gate2 gate3 gate4 gate5 gate6
+.PHONY: setup data corpus demo scan replay test check gate0 gate1 gate2 gate3 gate4 gate5 gate6
 
 setup:
 	pip install -e ".[dev]"
@@ -32,6 +32,19 @@ corpus:
 # fails loudly, not silently, when neither is available.
 demo: data
 	python -m casefile.orchestrator
+
+# Continuous operation, pieces 1-3 of 4 (docs/continuous-operation-plan.md).
+# Sweeps every contract x region slice over the committed warehouse's own
+# latest closed period, writing data/casestore.duckdb. StubProvider by
+# default; pass --live for a real provider via provider_from_env().
+scan: data
+	python -m casefile.scan
+
+# The same mechanism, replayed against the corpus's own last three real
+# trailing months in a tempdir case store — the demo-facing proof pieces 1-3
+# work end to end without live data (piece 4, explicitly out of scope).
+replay: data
+	python tools/replay_scan.py
 
 test:
 	pytest -q
