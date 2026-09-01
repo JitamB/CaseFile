@@ -467,7 +467,7 @@ wall time. Per case: cost per insight, total latency, share of stages with no mo
 | Layer | Choice | Justification |
 |---|---|---|
 | Language | **Python 3.11** | Statistical ecosystem; team familiarity |
-| Warehouse / store | **DuckDB** | Real SQL, file-based, no service to run, fast at this scale. One engine for warehouse, ledger and case store. Swap to Snowflake/Databricks is a connector change because every quantitative op is already SQL |
+| Warehouse / store | **DuckDB** | Real SQL, file-based, no service to run, fast at this scale. One engine for warehouse, ledger and case store. `metric.py`'s own aggregation SQL is dialect-neutral, so *those* queries move to Snowflake/Databricks on a connector swap alone — but three of `probes/*.sql`'s four files lean on DuckDB's own `UNNEST($array_param)` idiom to expand a list-valued parameter, and `lost_reason_scan.sql` uses the `FILTER (WHERE ...)` clause, which Snowflake does not support; both would need a probe-dialect rewrite alongside the connector swap, not a claim to soften after the fact (docs/ada-integration-plan.md's ADA-6) |
 | Types & validation | **Pydantic v2** | Contract, hypothesis, evidence, verdict — *and* LLM output-schema enforcement, for free |
 | Statistics | **statsmodels + scipy** | STL, change-point, rank correlation, DiD |
 | Retrieval | **rank_bm25 (default) + sentence-transformers `all-MiniLM-L6-v2` behind an `embed` extra** | Local, free, offline — no API dependency during the demo. Measured at ladder step 1.6: BM25 alone reaches recall@15 = 1.000 over the authored signal documents for every driver, so the 2 GB embedding model buys nothing on this corpus and stays opt-in rather than default |

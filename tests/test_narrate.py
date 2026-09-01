@@ -8,6 +8,12 @@ banded for one whose `amount_net` is not granted) and the "no restricted name
 ever leaks into prose" check run against the real, generated scenario A case,
 the same discipline `test_entitle.py`'s own §35.4 security test already
 holds narration to.
+
+ADA-4 (docs/ada-integration-plan.md), below the money tests: a Contested or
+Undetermined verdict must always name the specific test that kept it there —
+checked both when the fallback fires and when the model's own text already
+passes the guardrail, since the guarantee is code's, not a request the model
+can decline.
 """
 
 from __future__ import annotations
@@ -21,7 +27,19 @@ import pytest
 from casefile.contract import load_all as load_contracts
 from casefile.engine.entitle import AccountFacts, entitle
 from casefile.engine.narrate import NarrationResponse, narrate
-from casefile.models import Case, KPIContract, Persona, Usage
+from casefile.models import (
+    Attribution,
+    Case,
+    KPIContract,
+    Persona,
+    Telemetry,
+    TestMatrix,
+    TestResult,
+    Trigger,
+    Usage,
+    Verdict,
+    VerificationResult,
+)
 from casefile.personas import load_all as load_personas
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -233,3 +251,102 @@ def test_no_restricted_account_name_leaks_into_narration_for_support_lead(
         assert name not in narration.explanation
         assert name not in narration.action
         assert name not in narration.outstanding
+
+
+# ── ADA-4 — Contested/Undetermined always names the limiting test ──────────
+
+
+@pytest.fixture(scope="module")
+def undetermined_case() -> Case:
+    """Real `run_case()` output, scenario B — §25, docs/DECISIONS.md."""
+    return Case.model_validate(
+        json.loads((ROOT / "fixtures" / "case_real_scenario_b.json").read_text(encoding="utf-8"))
+    )
+
+
+def test_an_undetermined_verdict_names_the_limiting_test_on_the_fallback_path(
+    undetermined_case: Case, personas: dict[str, Persona], contract: KPIContract
+) -> None:
+    provider = FakeProvider(**a_response())
+    narration, _ = narrate(undetermined_case, personas["cfo"], contract, provider)
+    assert "competitor offer — no determinable onset for competitor_offer" in narration.explanation
+
+
+def test_the_limiting_test_clause_is_appended_even_when_the_models_own_text_passes(
+    undetermined_case: Case, personas: dict[str, Persona], contract: KPIContract
+) -> None:
+    """The guarantee is code's, not the model's — proven by giving the model
+    valid, guardrail-passing text and confirming the clause still lands."""
+    provider = FakeProvider(**a_response(
+        explanation="Confidence is {confidence}. [ev-competitor_offer-timing-001]",
+    ))
+    narration, _ = narrate(undetermined_case, personas["cfo"], contract, provider)
+    assert narration.explanation.startswith("Confidence is Undetermined.")
+    assert "no determinable onset for competitor_offer" in narration.explanation
+
+
+def test_a_contested_verdict_names_the_limiting_test_for_every_contender() -> None:
+    """Two survivors, both unresolved (adjudicate.py's own Contested status,
+    per its docstring) — the clause must name what kept *each* short of
+    Confirmed, not just the higher-ranked one."""
+    passing = TestResult(outcome="pass", detail="clears easily")
+    matrices = {
+        "pricing_change": TestMatrix(
+            timing=passing,
+            locality=passing,
+            dose=TestResult(outcome="inconclusive", detail="only 2 accounts, dose needs n>=5"),
+            control=passing,
+        ),
+        "competitor_offer": TestMatrix(
+            timing=passing,
+            locality=TestResult(
+                outcome="inconclusive", detail="no determinable footprint for competitor_offer"
+            ),
+            dose=passing,
+            control=passing,
+        ),
+    }
+    verdict = Verdict(
+        attribution=[
+            Attribution(
+                driver_id="pricing_change", share=0.5, status="unresolved", eliminated_by=None
+            ),
+            Attribution(
+                driver_id="competitor_offer", share=0.5, status="unresolved", eliminated_by=None
+            ),
+        ],
+        confidence="contested",
+    )
+    case = Case(
+        id="synthetic-contested",
+        trigger=Trigger(
+            kpi="net_revenue", period="2026-04", delta=-1_000_000.0, delta_relative=-0.05
+        ),
+        verification=VerificationResult(passed=True, checks=[], freshness_hours=1.0),
+        tests=matrices,
+        verdict=verdict,
+        priority=1.0,
+        telemetry=Telemetry(),
+    )
+    contract = load_contracts(ROOT / "contracts")["net_revenue"]
+    personas = load_personas(ROOT / "personas")
+    provider = FakeProvider(**a_response())
+
+    narration, _ = narrate(case, personas["cfo"], contract, provider)
+
+    assert "pricing change — only 2 accounts, dose needs n>=5" in narration.explanation
+    assert (
+        "competitor offer — no determinable footprint for competitor_offer"
+        in narration.explanation
+    )
+
+
+def test_a_likely_verdict_gets_no_limiting_test_clause(
+    case: Case, personas: dict[str, Persona], contract: KPIContract
+) -> None:
+    """Scoped to Contested/Undetermined only — a Likely verdict already has a
+    primary driver and a share; this clause would be redundant noise there."""
+    assert case.verdict is not None and case.verdict.confidence == "likely"
+    provider = FakeProvider(**a_response())
+    narration, _ = narrate(case, personas["cfo"], contract, provider)
+    assert " — " not in narration.explanation
