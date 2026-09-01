@@ -14,6 +14,8 @@ gate takes exactly three of them — scenarios A, D and E.
 from __future__ import annotations
 
 import json
+import math
+import random
 from datetime import date
 from pathlib import Path
 
@@ -192,3 +194,47 @@ def test_each_of_the_four_conditions_rejects_something_in_the_real_corpus(
     assert not march.passed  # type: ignore[attr-defined]
 
     assert judge(con, contract, "North", "2026-02").passed  # type: ignore[attr-defined]
+
+
+# ── ADA-2 — the gate's real false-alarm rate, not just its recovery of §25 ─────
+
+
+def _stable_series(rng: random.Random, level: float, months: int = 36) -> list[float]:
+    """Nothing worth flagging: a fixed seasonal shape plus independent monthly
+    noise, the same construction `tools/calibrate_materiality.py` uses at full
+    scale. Kept local rather than imported from `tools/` — those scripts are
+    standalone, not a package other tests import from (see
+    `check_ground_truth_isolation.py`, `check_links.py`).
+    """
+    return [
+        level * (1.0 + 0.06 * math.sin(2 * math.pi * m / 12)) * (1.0 + rng.gauss(0.0, 0.04))
+        for m in range(months)
+    ]
+
+
+def test_the_gate_rarely_fires_on_genuinely_stable_data(contract: KPIContract) -> None:
+    """docs/06-quality.md's own §35.6: measured at full precision (3,000 trials
+    per contract, `tools/calibrate_materiality.py`), the real false-alarm rate
+    on stable synthetic data is 0.00%-0.43% across all six contracts — nowhere
+    near ADA's own 5% target for its unrelated anomaly detector. This is a
+    fast regression check on that property, not a recalibration: 500 trials,
+    a bound of 5% that sits comfortably above the real number, so this only
+    fails if a future change to `assess()`, `robust_z`, or `persistence`
+    genuinely breaks the gate's conservatism — not from sampling noise at this
+    trial count.
+    """
+    rng = random.Random(2024)
+    m = contract.materiality
+    level = m.absolute / m.relative if m.relative else m.absolute
+    fires = sum(
+        assess(
+            _stable_series(rng, level),
+            period=12,
+            relative=m.relative,
+            absolute=m.absolute,
+            z_threshold=m.z_threshold,
+            min_persistence=m.min_persistence,
+        ).passed
+        for _ in range(500)
+    )
+    assert fires / 500 < 0.05
