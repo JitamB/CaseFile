@@ -34,6 +34,14 @@ fails the same way a stray digit does. "Every sentence cites a ledger id" is
 asked for in the prompt but not mechanically enforced per sentence, which
 would need real sentence segmentation to do without false positives; this is
 a stated simplification, not a hidden one.
+
+**A Contested or Undetermined verdict always says which test kept it there.**
+`_why_not_confirmed()` — ADA-4, docs/ada-integration-plan.md — appends a
+plain-language clause naming the first failed test for every still-contending
+driver, built from `TestResult.detail` (already deterministic prose from S5,
+never new model output) and appended in `narrate()` after the guardrail runs,
+not merely offered to the model as a token it might skip. The confidence
+label alone never had to explain itself before this; now it always does.
 """
 
 from __future__ import annotations
@@ -44,7 +52,7 @@ from pydantic import BaseModel, ConfigDict
 
 from casefile.engine.entitle import band
 from casefile.llm.base import LLMProvider, Prompt
-from casefile.models import Case, KPIContract, Persona, Usage
+from casefile.models import Case, KPIContract, Persona, TestMatrix, TestResult, Usage
 
 _CRORE = 10_000_000.0
 
@@ -90,6 +98,9 @@ def narrate(
         name: _guardrail(name, getattr(response, name), tokens, case)
         for name in _SECTIONS
     }
+    why = _why_not_confirmed(case)
+    if why is not None:
+        sections["explanation"] = f"{sections['explanation']} {why}".strip()
     return Narration(persona_id=persona.id, **sections), usage
 
 
@@ -144,6 +155,49 @@ def _tokens(case: Case, persona: Persona, contract: KPIContract) -> dict[str, st
             tokens["value_at_stake"] = value_at_stake
 
     return tokens
+
+
+_TEST_NAMES = ("timing", "locality", "dose", "control")
+
+
+def _limiting_test(matrix: TestMatrix) -> TestResult | None:
+    """The first test, in report order, that did not pass — what a reader
+    would ask about first on hearing the verdict is not Confirmed. `None`
+    only if every test passed, which a driver still short of Confirmed
+    should not reach — the caller treats that as nothing to say, not an
+    error, since a genuinely exhausted matrix is not this function's job to
+    police."""
+    for name in _TEST_NAMES:
+        result: TestResult = getattr(matrix, name)
+        if result.outcome != "pass":
+            return result
+    return None
+
+
+def _why_not_confirmed(case: Case) -> str | None:
+    """A plain-language clause naming the specific test(s) that kept a
+    Contested or Undetermined verdict from being Confirmed — ADA-4,
+    docs/ada-integration-plan.md. Built entirely from `TestResult.detail`,
+    already deterministic prose challenge.py computed (§15 S5); this is code
+    interpolating an already-verified fact, not a new claim, the same
+    discipline every other token in this module already holds to. Appended
+    in `narrate()` after the guardrail runs, not offered to the model as a
+    token — a fact this load-bearing is guaranteed by code, not requested in
+    a prompt and hoped for.
+    """
+    if case.verdict is None or case.verdict.confidence not in ("contested", "undetermined"):
+        return None
+    contenders = [a for a in case.verdict.attribution if a.status != "eliminated"]
+    clauses = []
+    for attribution in contenders:
+        matrix = case.tests.get(attribution.driver_id)
+        if matrix is None:
+            continue
+        limiting = _limiting_test(matrix)
+        if limiting is not None:
+            driver = attribution.driver_id.replace("_", " ")
+            clauses.append(f"{driver} — {limiting.detail}")
+    return "; ".join(clauses) if clauses else None
 
 
 def _crore(v: float) -> str:
