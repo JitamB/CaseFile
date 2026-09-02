@@ -84,14 +84,18 @@ def test_scenario_a_makes_exactly_two_real_model_calls(case) -> None:
 def test_the_deterministic_stages_alone_fit_well_inside_the_full_budget(case) -> None:
     """Real, measured wall time for verify through recommend — StubProvider
     reports its own two calls near-instantly, so this is close to the floor
-    the six deterministic stages actually cost. Generous bound (2s, real
-    measurement is under 1s) rather than a tight one, so this does not flake
-    on a slower CI runner; it exists to prove there is real headroom left for
-    the two calls this environment cannot place a live one for."""
+    the six deterministic stages actually cost (real measurement is under 1s
+    on an unloaded machine). The bound is the same headroom
+    `test_the_recorded_llm_figures_leave_the_full_run_under_budget` checks
+    against below — `_BUDGET_LATENCY_S` minus `_RECORDED_LLM_LATENCY_S` — not
+    an independently-chosen number: a 2.0s bound measured 2.08s and 2.14-2.80s
+    on GitHub Actions' own shared runners under contention (2026-09-01/02),
+    which a slower runner, not a regression, can cross for a step this cheap.
+    """
     deterministic = sum(
         s.wall_ms for s in case.telemetry.stages if not s.used_model
     ) / 1000.0
-    assert deterministic < 2.0
+    assert deterministic < _BUDGET_LATENCY_S - _RECORDED_LLM_LATENCY_S
 
 
 def test_the_recorded_llm_figures_leave_the_full_run_under_budget(case) -> None:
