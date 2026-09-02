@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { CaseFile } from './CaseFile'
 import { CaseList } from './CaseList'
 import { PersonaSwitcher } from './PersonaSwitcher'
@@ -33,39 +33,56 @@ export function App() {
     setCases([caseRealA, caseRealB, caseRealD] as unknown as Case[])
   }, [])
 
+  const shell = (content: ReactNode) => (
+    <>
+      <header className="app-header">
+        <div className="app-header-inner">
+          <span className="brand">
+            <span className="brand-mark" aria-hidden="true" />
+            CaseFile
+          </span>
+          <span className="brand-tagline">Investigations, not narratives</span>
+        </div>
+      </header>
+      <div className="app-shell">{content}</div>
+    </>
+  )
+
   if (!cases) return null
 
   if (screen === 'list' || !selectedId) {
-    return <CaseList cases={cases} onSelect={(id) => { setSelectedId(id); setScreen('detail') }} />
+    return shell(
+      <CaseList cases={cases} onSelect={(id) => { setSelectedId(id); setScreen('detail') }} />,
+    )
   }
 
   const selected = cases.find((c) => c.id === selectedId) ?? null
   if (!selected) return null
 
   if (screen === 'persona') {
-    return (
+    return shell(
       <>
         <button type="button" className="back-link" onClick={() => setScreen('detail')}>
-          ← Back to case
+          Back to case
         </button>
         <PersonaSwitcher views={entitledRealA as unknown as Record<string, EntitledView>} />
-      </>
+      </>,
     )
   }
 
-  return (
+  return shell(
     <>
       <button type="button" className="back-link" onClick={() => setScreen('list')}>
-        ← Back to cases
+        Back to cases
       </button>
       <CaseFile case={selected} />
       <Ledger ledger={selected.ledger} />
       <TelemetryPanel telemetry={selected.telemetry} />
       {selected.id === caseRealA.id && (
         <button type="button" className="persona-link" onClick={() => setScreen('persona')}>
-          View as another persona →
+          View as another persona
         </button>
       )}
-    </>
+    </>,
   )
 }

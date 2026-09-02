@@ -16,17 +16,19 @@ import { StillOpen } from './blocks/StillOpen'
  */
 export function CaseFile({ case: theCase }: { case: Case }) {
   return (
-    <main aria-label={`Case ${theCase.id}`} data-testid="case-file">
-      <WhatMoved trigger={theCase.trigger} />
-      <WhereItCameFrom tree={theCase.decomposition} />
-      <WhatWeTested hypotheses={theCase.hypotheses} tests={theCase.tests} />
-      <Verdict
-        verdict={theCase.verdict}
-        tests={theCase.tests}
-        totalDelta={theCase.decomposition?.total_delta ?? null}
-      />
-      <DoThis recommendation={theCase.recommendation} />
-      <StillOpen question={theCase.open_question} />
-    </main>
+    <div className="case-file-shell">
+      <main aria-label={`Case ${theCase.id}`} data-testid="case-file">
+        <WhatMoved trigger={theCase.trigger} verification={theCase.verification} />
+        <WhereItCameFrom tree={theCase.decomposition} />
+        <WhatWeTested hypotheses={theCase.hypotheses} tests={theCase.tests} />
+        <Verdict
+          verdict={theCase.verdict}
+          tests={theCase.tests}
+          totalDelta={theCase.decomposition?.total_delta ?? null}
+        />
+        <DoThis recommendation={theCase.recommendation} />
+        <StillOpen question={theCase.open_question} />
+      </main>
+    </div>
   )
 }

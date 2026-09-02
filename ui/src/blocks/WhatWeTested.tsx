@@ -25,6 +25,7 @@ export function WhatWeTested({ hypotheses, tests }: { hypotheses: Case['hypothes
         return (
           <article key={hypothesis.driver_id} data-driver={hypothesis.driver_id}>
             <h3>{hypothesis.driver_id.replace(/_/g, ' ')}</h3>
+            {hypothesis.rationale && <p className="rationale">{hypothesis.rationale}</p>}
             {matrix ? (
               <table>
                 <tbody>

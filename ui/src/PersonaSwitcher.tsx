@@ -9,6 +9,11 @@ const CONFIDENCE_LABEL: Record<string, string> = {
   undetermined: 'Undetermined',
 }
 
+//: Same reasoning as WhereItCameFrom.tsx's own VISIBLE_ROWS — a persona with
+//: full account visibility sees the same ~50-row decomposition that screen
+//: collapses, and this one has its own independent rendering of it.
+const VISIBLE_ACCOUNTS = 8
+
 /**
  * Screen 4 — §11: "The same case rendered for CFO / VP Sales / Analyst /
  * Support Lead. Restricted fields shown as '2 accounts (names restricted)',
@@ -51,7 +56,11 @@ export function PersonaSwitcher({ views }: { views: Record<string, EntitledView>
 
 function PersonaPage({ view }: { view: EntitledView }) {
   const { payload } = view
-  const accounts = payload.decomposition?.by_dimension.account ?? []
+  const accounts = [...(payload.decomposition?.by_dimension.account ?? [])].sort(
+    (a, b) => magnitude(b.delta) - magnitude(a.delta),
+  )
+  const visible = accounts.slice(0, VISIBLE_ACCOUNTS)
+  const rest = accounts.slice(VISIBLE_ACCOUNTS)
   const primary = payload.verdict?.attribution.find((a) => a.status === 'primary')
 
   return (
@@ -74,12 +83,23 @@ function PersonaPage({ view }: { view: EntitledView }) {
       </p>
 
       <dl className="account-list">
-        {accounts.map((node) => (
+        {visible.map((node) => (
           <div key={node.key} className="contribution-row">
             <dt>{node.key}</dt>
             <dd>{money(node.delta)}</dd>
           </div>
         ))}
+        {rest.length > 0 && (
+          <details className="contribution-more">
+            <summary>+{rest.length} more</summary>
+            {rest.map((node) => (
+              <div key={node.key} className="contribution-row">
+                <dt>{node.key}</dt>
+                <dd>{money(node.delta)}</dd>
+              </div>
+            ))}
+          </details>
+        )}
       </dl>
 
       {payload.verdict && (
@@ -106,4 +126,8 @@ function money(v: Moneyish): string {
   if (typeof v === 'string') return v
   const sign = v < 0 ? '−' : ''
   return `${sign}₹${(Math.abs(v) / 10_000_000).toFixed(1)} Cr`
+}
+
+function magnitude(v: Moneyish): number {
+  return typeof v === 'number' ? Math.abs(v) : 0
 }
