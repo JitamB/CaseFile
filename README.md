@@ -4,8 +4,7 @@
 
 ### An AI that *investigates* business numbers instead of narrating them.
 
-**Accenture Innovation Challenge 2026 · Round 2**</br>
-**Problem Track 3 — BusinessIntelligence.ai**</br>
+**Accenture Innovation Challenge 2026 -- Problem Track 3: BusinessIntelligence.ai**</br>
 **Team Jerry · IIT Kharagpur**</br>
 
 *A deterministic pipeline that establishes facts, and calls a language model only where
@@ -30,8 +29,6 @@ delay comes from somewhere else:
 | **The waiting is social** | The analyst's real work is assembling evidence — pulling release logs, reading support tickets, messaging six people who reply when they can. The clock runs on other people's inboxes, not on query time. |
 | **Many alarming moves are not real** | Late-arriving data, a changed metric definition, a refund batch, one large invoice slipping across a month boundary. Effort spent explaining an artefact is spent twice — and it destroys trust when discovered. |
 
-> ### The gap we close is not description. It is evidence.
-
 ---
 
 ## The insight
@@ -45,8 +42,6 @@ cannot return **"I don't know"**, because generating text is the only thing it d
 CaseFile behaves like an investigator instead. It establishes facts first, tests
 explanations against them, and is willing to close a case unresolved. The operating
 principle from which everything else follows:
-
-> ### Exhaust the arithmetic before invoking hypotheses.
 
 Revenue fell 8%. We do not ask a model *why*. We first ask *where*. If 88% of the decline
 sits in two enterprise renewals, an unanswerable question has become a focused one. Only
@@ -442,6 +437,9 @@ casefile/
 The full plan lives in [`docs/`](docs/README.md). Cross-references in the text use `§N`;
 [the index](docs/README.md) resolves every one of them.
 
+**Want to run it?** → [docs/running-the-project.md](docs/running-the-project.md) — the full
+setup-to-UI command sequence, in order.
+
 | | Document | Covers |
 |---|---|---|
 | 01 | [**Problem & Solution**](docs/01-problem-and-solution.md) | The problem underneath, the four verdicts, the worked example, user flow |
@@ -456,21 +454,8 @@ The full plan lives in [`docs/`](docs/README.md). Cross-references in the text u
 
 ---
 
-## Team
-
-**Team Jerry — IIT Kharagpur**
-
-| Member | Track | Owns |
-|---|---|---|
-| **Aditya Goyal** | **A · Data & Truth** | Everything that produces a number — contract, generator, loader, statistics, Verify, Decompose |
-| **Jitam Barman** | **B · Evidence & Reasoning** | Everything between a footprint and a verdict — hypotheses, retrieval, extraction, challenge, adjudication, recommendation, the LLM layer |
-| **Sahil Kumar Gupta** | **C · Surface & Delivery** | Everything a human touches — orchestrator, API, entitlement, narration, personas, UI, feedback |
-
----
-
 <div align="center">
 
-**Dashboards tell businesses what changed.**
-**CaseFile tells them what to believe, what to question, and what to do next.**
+_Dashboards tell businesses what changed. CaseFile tells them what to believe, what to question, and what to do next._
 
 </div>
